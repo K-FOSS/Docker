@@ -1,17 +1,22 @@
 FROM alpine:3.11 as AlpineBase
 
 FROM AlpineBase as SonarrFetch
-RUN mkdir /sonarr && \
-  cd /sonarr && \
-  wget "https://services.sonarr.tv/v1/download/phantom-develop/latest?version=3&os=linux" -O sonarr.tar.gz && \
-  tar xzvf sonarr.tar.gz -C /sonarr --strip-components=1 && \
-  rm sonarr.tar.gz
+RUN mkdir /sonarr \
+  && cd /sonarr \
+  && wget "https://services.sonarr.tv/v1/download/phantom-develop/latest?version=3&os=linux" -O sonarr.tar.gz \
+  && tar xzvf sonarr.tar.gz -C /sonarr --strip-components=1 \
+  && rm sonarr.tar.gz \
+  && echo 'sonarr:x:1001:1001:Linux User,,,:/config:/bin/sh' > /tmp/passwd \
+  && mkdir /config \
+  && chown 1001:1001 /config 
 
 FROM AlpineBase as DependencyFetcher
 RUN apk add --no-cache libmediainfo sqlite-dev
 
 FROM kristianfoss/programs-mono
-COPY --from=SonarrFetch /sonarr /sonarr
+COPY --from=SonarrFetch /tmp/passwd /etc/passwd
+COPY --from=SonarrFetch --chown=1001:1001 /sonarr /sonarr
+COPY --from=SonarrFetch --chown=1001:1001 /config /config
 COPY --from=DependencyFetcher /usr/lib/libgcc_s.so.1 \
   /usr/lib/libsqlite3.so.0 \
   /usr/lib/libmediainfo.so.0 \
@@ -24,5 +29,6 @@ COPY --from=DependencyFetcher /usr/lib/libgcc_s.so.1 \
   /usr/lib/libcrypto.so.1.1 \
   /usr/lib/
 
-VOLUME /config
+
+USER sonarr
 CMD [ "/sonarr/Sonarr.exe", "--no-browser", "-data=/config" ]

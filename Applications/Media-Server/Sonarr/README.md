@@ -8,4 +8,8 @@ Dockerhub: `kristianfoss/applications-mediaserver-sonarr:latest`
 
 ## Usage
 
-TODO
+```
+docker volume create sonarrConfig
+
+docker run -it -v sonarrConfig:/config -p 8989:8989 kristianfoss/applications-mediaserver-sonarr:latest
+```
