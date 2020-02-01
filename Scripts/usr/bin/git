@@ -1,0 +1,7 @@
+CLI_IMAGE="kristianfoss/programs-git:git"
+
+CLI_NAME="git-cli"
+
+/usr/local/bin/ensure-docker-cli "git-cli" "${GIT_CLI_IMAGE}" "-v ${HOME}:${HOME} -e HOME=${HOME}"
+
+exec /usr/bin/docker exec -t --workdir "${PWD}" ${GIT_CLI_NAME} /usr/bin/git "${@}"

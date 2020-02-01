@@ -1,0 +1,4 @@
+#!/bin/sh
+TTY_FILE=$(/usr/bin/tty)
+
+/usr/bin/socat FILE:"$TTY_FILE",raw,echo=0 UNIX-CONNECT:/tmp/docker-sshd-shell.sock

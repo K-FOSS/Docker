@@ -1,0 +1,2 @@
+alias telnet='docker run -it --rm kristianfoss/programs-telnet'
+alias ssh='docker run -it --rm kristianfoss/programs-ssh'

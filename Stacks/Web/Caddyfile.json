@@ -1,0 +1,27 @@
+{
+  "apps": {
+    "http": {
+      "servers": {
+        "core": {
+          "listen": ["0.0.0.0:8080"],
+          "routes": [
+            {
+              "handle": [
+                {
+                  "handler": "static_response",
+                  "status_code": "200",
+                  "body": "Hello World!"
+                }
+              ],
+              "match": [
+                {
+                  "path": ["/"]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

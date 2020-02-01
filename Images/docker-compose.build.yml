@@ -1,0 +1,75 @@
+version: '3.7'
+
+x-baseBuilder:
+  &baseBuilder
+  context: ./Builders
+
+# Just a simple `apk add --no-cache ${ALPINE_PKGS}`
+# 
+# ## ENV Variables
+# APK_ARGS: 'Arguments passed to `apk add --no-cache` right before packages' 
+# ALPINE_PKGS: 'Alpine packages to install'
+# 
+# ## Advanced
+# 
+# `docker-compose.build.yml` usage:
+# ```YAML
+#  PKGNAME_Alpine-CMD:
+#    build:
+#      <<: *defaultAlpineSimpleBuild
+#      args:
+#        ALPINE_PKGS:
+# ```
+x-simpleAlpineBuilder:
+  &simpleAlpineBuilder
+  <<: *baseBuilder
+  dockerfile: SimpleAlpine.Dockerfile
+
+x-advancedAlpineBuilder:
+  &advancedAlpineBuilder
+  context: ./Builders/AdvancedBuilder
+
+services:
+  gitAlpine:
+    image: kristianfoss/programs-git:alpine-cli
+    build:
+      <<: *simpleAlpineBuilder
+      args:
+        PKGS: 'git'
+
+  keybaseAlpine:
+    image: kristianfoss/programs-keybase:alpine-client
+    build:
+      <<: *simpleAlpineBuilder
+      args:
+        PKG_ARGS: '--repository http://dl-cdn.alpinelinux.org/alpine/edge/testing'
+        PKGS: 'keybase-client'
+
+  sshScratch:
+    build:
+      context: ./OpenSSH
+      target: ssh
+    image: kristianfoss/programs-openssh:ssh
+
+  sshdScratch:
+    build:
+      context: ./OpenSSH
+      target: sshd
+    image: kristianfoss/programs-openssh:sshd
+
+  sshagentScratch:
+    build:
+      context: ./OpenSSH
+      target: ssh-agent
+    image: kristianfoss/programs-openssh:ssh-agent
+
+  sshaddScratch:
+    build:
+      context: ./OpenSSH
+      target: ssh-add
+    image: kristianfoss/programs-openssh:ssh-add
+
+  gcloudAlpine:
+    build:
+      context: ./TMP/GCloud
+    image: kristianfoss/programs-gcloud:alpine

@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+  Web:
+    image: ${CADDY2_IMAGE}
+    ports:
+      - 8080:8080
+    configs:
+      - source: CaddyConfig
+        target: /etc/Caddy/Caddyfile.json
+
+configs:
+  CaddyConfig:
+    name: Caddyfile-${CONFIG_VERSION}
+    file: Caddyfile.json

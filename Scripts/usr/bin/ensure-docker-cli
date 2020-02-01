@@ -1,0 +1,22 @@
+CLI_NAME="${1}"
+CLI_IMAGE="${2}"
+
+CLI_CMD_ARGS="-d --name ${CLI_NAME} ${3}"
+
+CLI_CMD="docker run ${CLI_CMD_ARGS} ${CLI_IMAGE}"
+
+if [ ! "$(docker ps -q -f name=${CLI_NAME})" ]; then
+  if [ "$(docker ps -aq -f status=exited -f name=${CLI_NAME})" ]; then
+    # Start existing Container
+    docker start ${CLI_NAME} &>/dev/null
+    wait
+    exit
+  else 
+    # Create CLI Container if it doesn't exist
+    ${CLI_CMD} &>/dev/null
+    wait
+    exit
+  fi
+else
+  exit 0
+fi
