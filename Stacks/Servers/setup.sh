@@ -5,7 +5,7 @@ REQUIRED_PKGS="gnupg-agent software-properties-common socat"
 OSTYPE=unknown
 UNAME=$(uname -a)
 [[ $UNAME =~ "Darwin" ]] && OSTYPE=macos
-[[ $UNAME =~ "ubuntu" ]] && OSTYPE=ubuntu
+[[ $UNAME =~ "Ubuntu" ]] && OSTYPE=ubuntu
 
 installPackage() {
   local packages="${1}"
