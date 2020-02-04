@@ -2,7 +2,6 @@
 Description=Docker SSH Server
 Wants=docker.service
 After=docker.service
-Requires=sshd.socket
 
 [Service]
 ExecStart=/usr/bin/socat UNIX-LISTEN:/tmp/docker-sshd-shell.sock EXEC:'/bin/bash -i',pty,stderr,setsid,sigint,sane

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-PROJECT_PATH="${PROJECT_PATH:-"~/Docker-Services"}"
-SERVICE_PATH="${SERVICE_PATH:-"/etc/systemd/system/sshd.service"}"
+PROJECT_PATH=${PROJECT_PATH:-/root/Docker-Services}
+SERVICE_PATH=${SERVICE_PATH:-/etc/systemd/system/sshd.service}
 
 echo "Starting the installer for docker backed OpenSSH Server."
 
