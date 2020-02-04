@@ -57,4 +57,4 @@ chmod +x /usr/local/bin/docker-compose
 
 echo "Installing Server Services Stack from the 'installServices.sh' script in the K-FOSS/Docker Stacks/Servers/installServices.sh"
 
-wget -O - https://raw.githubusercontent.com/K-FOSS/Docker/master/Stacks/Servers/setup.sh | bash
+wget -O - https://raw.githubusercontent.com/K-FOSS/Docker/master/Stacks/Servers/installServices.sh | bash
