@@ -21,11 +21,12 @@ installPackage() {
 addRepo() {
   local repoKeyURL="${1}"
   local repoURL="${2}"
+  local subRepo="${3:-"stable"}"
 
   # TODO: Add support for more distributions
   if [ "${OSTYPE}" == "ubuntu" ]; then
     wget -O - ${repoKeyURL} | apt-key add -
-    add-apt-repository "deb [arch=amd64] ${repoURL} $(lsb_release -cs) stable"
+    add-apt-repository "deb [arch=amd64] ${repoURL} $(lsb_release -cs) ${subRepo}"
     apt-get update --assume-yes
   else
     echo "Installing not supported on this distribution... Yet!"
@@ -36,7 +37,7 @@ echo "Installing Packages"
 
 installPackage "${REQUIRED_PKGS}"
 
-addRepo "https://download.docker.com/linux/ubuntu/gpg" "https://download.docker.com/linux/ubuntu"
+addRepo "https://download.docker.com/linux/ubuntu/gpg" "https://download.docker.com/linux/ubuntu" "nightly"
 
 installPackage "docker-ce docker-ce-cli containerd.io"
 
