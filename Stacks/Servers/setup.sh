@@ -12,7 +12,7 @@ installPackage() {
 
   # TODO: Add support for more distributions
   if [ "${OSTYPE}" == "ubuntu" ]; then
-    apt-get install -y "${packages}"
+    apt-get install --assume-yes "${packages}"
   else
     echo "Installing not supported on this distribution... Yet!"
   fi
@@ -26,6 +26,7 @@ addRepo() {
   if [ "${OSTYPE}" == "ubuntu" ]; then
     wget -O - ${keyURL} | apt-key add -
     add-apt-repository "deb [arch=amd64] ${repoURL} $(lsb_release -cs) stable"
+    apt-get update --assume-yes
   else
     echo "Installing not supported on this distribution... Yet!"
   fi
