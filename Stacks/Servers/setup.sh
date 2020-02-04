@@ -44,14 +44,14 @@ installPackage "docker-ce docker-ce-cli containerd.io"
 echo "Packages installed. testing 'docker --help'."
 docker --help
 
-# echo "Installing 'docker-compose'"
+echo "Installing 'docker-compose'"
 
-# wget -O /usr/local/bin/docker-compose "https://github.com/docker/compose/releases/download/1.25.4/docker-compose-$(uname -s)-$(uname -m)"
+wget -O /usr/local/bin/docker-compose "https://github.com/docker/compose/releases/download/1.25.3/docker-compose-$(uname -s)-$(uname -m)"
 
-# echo "Making 'docker-compose.yml' executable"
+echo "Making 'docker-compose.yml' executable"
 
-# chmod +x /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
 
-# echo "Installing Server Services Stack from the 'installServices.sh' script in the K-FOSS/Docker Stacks/Servers/installServices.sh"
+echo "Installing Server Services Stack from the 'installServices.sh' script in the K-FOSS/Docker Stacks/Servers/installServices.sh"
 
-# wget -O - https://raw.githubusercontent.com/K-FOSS/Docker/master/Stacks/Servers/installServices.sh | bash
+wget -O - https://raw.githubusercontent.com/K-FOSS/Docker/master/Stacks/Servers/installServices.sh | bash
