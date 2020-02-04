@@ -37,12 +37,12 @@ echo "Installing Packages"
 
 installPackage "${REQUIRED_PKGS}"
 
-addRepo "https://download.docker.com/linux/ubuntu/gpg" "https://download.docker.com/linux/ubuntu" "nightly"
+addRepo "https://download.docker.com/linux/ubuntu/gpg" "https://download.docker.com/linux/ubuntu" "test"
 
 installPackage "docker-ce docker-ce-cli containerd.io"
 
-# echo "Packages installed. testing 'docker --help'."
-# docker --help
+echo "Packages installed. testing 'docker --help'."
+docker --help
 
 # echo "Installing 'docker-compose'"
 
