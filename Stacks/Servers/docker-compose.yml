@@ -1,0 +1,26 @@
+version: '3.7'
+
+services:
+  OpenVMTools:
+    image: linuxkit/open-vm-tools:v0.7
+    container_name: open-vm-toolsd
+    restart: always
+    network_mode: host
+    privileged: true
+
+  SSHD:
+    image: kristianfoss/programs-openssh:sshd
+    restart: always
+    ports:
+      - target: 22
+        published: 22
+        protocol: tcp
+        mode: host
+    volumes:
+      - /etc/pam.d:/etc/pam.d:ro
+      - /etc/pam.conf:/etc/pam.conf:ro
+      - /etc/ssh:/etc/ssh:ro
+      - /etc/shadow:/etc/shadow:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /root/.ssh:/root/.ssh:ro
+      - /tmp/docker-sshd-shell.sock:/tmp/docker-sshd-shell.sock
