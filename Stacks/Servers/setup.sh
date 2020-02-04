@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-REQUIRED_PKGS="gnupg-agent apt-transport-https ca-certificates software-properties-common socat"
+REQUIRED_PKGS="gnupg-agent apt-transport-https ca-certificates software-properties-common socat zsh"
 
 # check os
 OSTYPE=unknown
@@ -51,6 +51,21 @@ wget -O /usr/local/bin/docker-compose "https://github.com/docker/compose/release
 echo "Making 'docker-compose.yml' executable"
 
 chmod +x /usr/local/bin/docker-compose
+
+echo "Creating '/etc/ssh'"
+mkdir -p /etc/ssh
+
+echo "Appending 'sshd:x:108:65534::/run/sshd:/usr/sbin/nologin' to /etc/passwd"
+
+echo "sshd:x:108:65534::/run/sshd:/usr/sbin/nologin" >>/etc/passwd
+
+echo "Installing 'sshd_config'"
+
+wget -O /etc/ssh/sshd_config https://raw.githubusercontent.com/K-FOSS/Docker/master/Stacks/Servers/ssh/sshd_config
+
+echo "Generating SSH Host Keys with 'kristianfoss/programs-openssh:ssh-keygen'"
+
+docker run -it --rm -v /etc/ssh:/etc/ssh -v /etc/passwd:/etc/passwd:ro kristianfoss/programs-openssh:ssh-keygen -A
 
 echo "Installing Server Services Stack from the 'installServices.sh' script in the K-FOSS/Docker Stacks/Servers/installServices.sh"
 

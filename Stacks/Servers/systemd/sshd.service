@@ -4,7 +4,7 @@ Wants=docker.service
 After=docker.service
 
 [Service]
-ExecStart=/usr/bin/socat UNIX-LISTEN:/tmp/docker-sshd-shell.sock EXEC:'/bin/bash -i',pty,stderr,setsid,sigint,sane
+ExecStart=/usr/bin/socat UNIX-LISTEN:/tmp/docker-sshd-shell.sock EXEC:'/usr/bin/zsh -i',pty,stderr,setsid,sigint,sane
 ExecStop=/bin/kill -s HUP $MAINPID
 
 [Install]
