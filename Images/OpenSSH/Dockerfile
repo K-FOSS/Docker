@@ -1,23 +1,27 @@
-FROM alpine:3.11 as alpinebase
+ARG FINAL_BASE='scratch'
+ARG ALPINE='alpine:3.11'
+ARG CLI_NAME='ssh'
 
-FROM alpine:3.11 as busyboxBuild
-RUN apk add --no-cache gcc \
+FROM ${ALPINE} as build-base
+RUN apk add --no-cache \
   build-base \
-  musl-dev \
+  linux-headers \
+  autoconf \
+  automake \
+  zlib-static \
   zlib-dev \
   openssl-dev \
-  openssl-libs-static \
-  zlib-static \
+  openssl-libs-static
+
+
+FROM build-base as busyboxBuild
+RUN apk add --no-cache \
+  musl-dev \
   perl \
   ncurses \
   ncurses-dev \
   binutils-gold \
-  g++ \
-  gcc \
   gnupg \
-  libgcc \
-  linux-headers \
-  make \
   python \
   libstdc++ 
 
@@ -31,9 +35,10 @@ RUN cd /tmp/busybox \
   && ./make_single_applets.sh || true
 
 
-FROM alpinebase as pamBuild
 
-RUN apk add --no-cache build-base linux-headers  bison flex-dev autoconf automake libtool
+
+FROM build-base as pamBuild
+RUN apk add --no-cache bison flex-dev libtool
 
 RUN mkdir -p /tmp/linux-pam \
   && wget -O - https://github.com/linux-pam/linux-pam/releases/download/v1.3.1/Linux-PAM-1.3.1.tar.xz \
@@ -46,10 +51,10 @@ RUN cd /tmp/linux-pam \
 
 
 
-FROM alpinebase as builder
+FROM build-base as builder
 COPY --from=pamBuild /tmp/linux-pam/libpam/.libs/libpam.a /tmp/linux-pam/libpam/.libs/libpam.so /usr/lib/
 
-RUN apk add --no-cache gcc g++ make zlib-dev openssl-dev openssl-libs-static zlib-static linux-pam-dev libselinux-dev pcre-dev
+RUN apk add --no-cache linux-pam-dev libselinux-dev pcre-dev
 
 RUN mkdir -p /tmp/openssh \
   && wget -O - https://openbsd.cs.toronto.edu/pub/OpenBSD/OpenSSH/portable/openssh-8.1p1.tar.gz | tar xz -C /tmp/openssh --strip-components=1
@@ -77,7 +82,9 @@ RUN  cd /tmp/openssh \
   && make -j$(getconf _NPROCESSORS_ONLN)
 
 
-FROM alpinebase as prepareUser
+
+
+FROM ${ALPINE} as prepareUser
 RUN mkdir -p /tmp/user/etc \
   && echo 'user:x:1000:1000:Linux User,,,:/home/user:/usr/sbin/nologin' > /tmp/user/etc/passwd \
   && mkdir -p /tmp/user/home/user/.ssh \
@@ -86,49 +93,30 @@ RUN mkdir -p /tmp/user/etc \
 
 
 
-FROM alpinebase as prepareSSH
-COPY --from=prepareUser /tmp/user /tmp/ssh
-COPY --from=builder /tmp/openssh/ssh /tmp/ssh/usr/bin/
+FROM ${ALPINE} as prepareCLI
+ARG CLI_NAME
+
+RUN apk add --no-cache binutils
+
+COPY --from=prepareUser /tmp/user /tmp/cli
+COPY --from=builder /tmp/openssh/${CLI_NAME} /tmp/cli/usr/bin/
+
+RUN strip /tmp/cli/usr/bin/${CLI_NAME} \
+  && cd /tmp/cli/usr/bin/ \
+  && ln -s ./${CLI_NAME} ./cliLink \
+  && chmod +X /tmp/cli/usr/bin/cliLink 
 
 
-FROM scratch as ssh
-COPY --from=prepareSSH /tmp/ssh/ /
-
-USER user
-ENTRYPOINT [ "/usr/bin/ssh" ]
-
-
-
-
-FROM alpinebase as prepareSSHAgent
-COPY --from=prepareUser /tmp/user /tmp/ssh-agent
-COPY --from=builder /tmp/openssh/ssh-agent /tmp/ssh-agent/usr/bin/ssh-agent
-
-
-FROM scratch as ssh-agent
-COPY --from=prepareSSHAgent /tmp/ssh-agent /
+FROM ${FINAL_BASE} as cli
+COPY --from=prepareCLI /tmp/cli /
 
 USER user
-ENTRYPOINT [ "/usr/bin/ssh-agent", "-D", "-a" ]
+ENTRYPOINT ["/usr/bin/cliLink"]
 
 
 
 
-FROM alpinebase as prepareSSHAdd
-COPY --from=prepareUser /tmp/user /tmp/ssh-add
-COPY --from=builder /tmp/openssh/ssh-add /tmp/ssh-add/usr/bin/ssh-add
-
-
-FROM scratch as ssh-add
-COPY --from=prepareSSHAdd /tmp/ssh-add /
-
-USER user
-ENTRYPOINT [ "/usr/bin/ssh-add" ]
-
-
-
-
-FROM alpinebase as prepareSSHD
+FROM ${ALPINE} as prepareSSHD
 COPY --from=builder /tmp/openssh/sshd /tmp/sshd/usr/bin/
 COPY --from=kristianfoss/programs-socat /usr/bin/socat /tmp/sshd/usr/bin/
 COPY --from=busyboxBuild /tmp/busybox/busybox_GETTY /tmp/sshd/sbin/getty
@@ -147,8 +135,8 @@ RUN mkdir -p /tmp/sshd/var/lib/sshd \
 
 RUN echo 'sshd:x:1001:1001:sshd privsep,,,:/:/bin/false' >> /etc/passwd \
   && cp /etc/passwd /tmp/sshd/etc/passwd \
-  && mkdir -p /tmp/sshd/home/kristianfjones \
   && mkdir -p /tmp/sshd/root
+
 
 FROM scratch as sshd
 COPY --from=prepareSSHD /tmp/sshd /

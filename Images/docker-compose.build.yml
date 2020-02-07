@@ -1,17 +1,16 @@
 version: '3.7'
 
-x-baseBuilder:
-  &baseBuilder
+x-baseBuilder: &baseBuilder
   context: ./Builders
 
 # Just a simple `apk add --no-cache ${ALPINE_PKGS}`
-# 
+#
 # ## ENV Variables
-# APK_ARGS: 'Arguments passed to `apk add --no-cache` right before packages' 
+# APK_ARGS: 'Arguments passed to `apk add --no-cache` right before packages'
 # ALPINE_PKGS: 'Alpine packages to install'
-# 
+#
 # ## Advanced
-# 
+#
 # `docker-compose.build.yml` usage:
 # ```YAML
 #  PKGNAME_Alpine-CMD:
@@ -20,14 +19,20 @@ x-baseBuilder:
 #      args:
 #        ALPINE_PKGS:
 # ```
-x-simpleAlpineBuilder:
-  &simpleAlpineBuilder
+x-simpleAlpineBuilder: &simpleAlpineBuilder
   <<: *baseBuilder
   dockerfile: SimpleAlpine.Dockerfile
 
-x-advancedAlpineBuilder:
-  &advancedAlpineBuilder
+x-advancedAlpineBuilder: &advancedAlpineBuilder
   context: ./Builders/AdvancedBuilder
+
+x-dockerCLIBuilder: &dockerCLIBuilder
+  context: ./Docker
+  target: cli
+
+x-opensshBuilder: &opensshBuilder
+  context: ./OpenSSH
+  target: cli
 
 services:
   gitAlpine:
@@ -47,29 +52,72 @@ services:
 
   sshScratch:
     build:
-      context: ./OpenSSH
-      target: ssh
-    image: kristianfoss/programs-openssh:ssh
+      <<: *opensshBuilder
+      args:
+        CLI_NAME: 'ssh'
+    image: kristianfoss/programs-openssh:scratch-ssh
 
   sshdScratch:
     build:
       context: ./OpenSSH
       target: sshd
-    image: kristianfoss/programs-openssh:sshd
+      args:
+        CLI_NAME: 'sshd'
+    image: kristianfoss/programs-openssh:scratch-sshd
 
   sshagentScratch:
     build:
-      context: ./OpenSSH
-      target: ssh-agent
-    image: kristianfoss/programs-openssh:ssh-agent
+      <<: *opensshBuilder
+      args:
+        CLI_NAME: 'ssh-agent'
+    image: kristianfoss/programs-openssh:scratch-ssh-agent
+    entrypoint: ['/usr/bin/ssh-agent', '-D', '-a']
 
   sshaddScratch:
     build:
-      context: ./OpenSSH
-      target: ssh-add
-    image: kristianfoss/programs-openssh:ssh-add
+      <<: *opensshBuilder
+      args:
+        CLI_NAME: 'ssh-add'
+    image: kristianfoss/programs-openssh:scratch-ssh-add
+
+  sshkegenScratch:
+    build:
+      <<: *opensshBuilder
+      args:
+        CLI_NAME: 'ssh-keygen'
+    image: kristianfoss/programs-openssh:scratch-ssh-keygen
 
   gcloudAlpine:
     build:
       context: ./TMP/GCloud
     image: kristianfoss/programs-gcloud:alpine
+
+  dockerScratch:
+    build:
+      <<: *dockerCLIBuilder
+      args:
+        CLI_NAME: 'docker'
+    image: kristianfoss/programs-docker:scratch-docker
+
+  dockerAlpine:
+    build:
+      <<: *dockerCLIBuilder
+      args:
+        FINAL_BASE: 'alpine:3.11'
+        CLI_NAME: 'docker'
+    image: kristianfoss/programs-docker:alpine-docker
+
+  dockerdScratch:
+    build:
+      <<: *dockerCLIBuilder
+      args:
+        CLI_NAME: 'dockerd'
+    image: kristianfoss/programs-docker:scratch-dockerd
+
+  dockerdAlpine:
+    build:
+      <<: *dockerCLIBuilder
+      args:
+        FINAL_BASE: 'alpine:3.11'
+        CLI_NAME: 'dockerd'
+    image: kristianfoss/programs-docker:alpine-dockerd
