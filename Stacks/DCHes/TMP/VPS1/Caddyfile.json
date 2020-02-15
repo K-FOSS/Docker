@@ -1,0 +1,174 @@
+{
+  "admin": {
+    "disabled": true
+  },
+  "apps": {
+    "http": {
+      "http_port": 8080,
+      "https_port": 8443,
+      "servers": {
+        "kristianjones.dev": {
+          "listen": [":8443"],
+          "routes": [
+            {
+              "match": [
+                {
+                  "host": ["*.kristianjones.dev"]
+                }
+              ],
+              "handle": [
+                {
+                  "handler": "subroute",
+                  "routes": [
+                    {
+                      "match": [
+                        {
+                          "host": ["bitwarden.kristianjones.dev"]
+                        }
+                      ],
+                      "handle": [
+                        {
+                          "handler": "subroute",
+                          "routes": [
+                            {
+                              "match": [
+                                {
+                                  "path": ["/notifications/hub/negotiate"]
+                                }
+                              ],
+                              "handle": [
+                                {
+                                  "handler": "reverse_proxy",
+                                  "upstreams": [
+                                    {
+                                      "dial": "bitwarden-kjdev:80"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "match": [
+                                {
+                                  "path": ["/notifications/hub"]
+                                }
+                              ],
+                              "handle": [
+                                {
+                                  "handler": "reverse_proxy",
+                                  "upstreams": [
+                                    {
+                                      "dial": "bitwarden-kjdev:3012"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "match": [
+                                {
+                                  "path": ["*"]
+                                }
+                              ],
+                              "handle": [
+                                {
+                                  "handler": "reverse_proxy",
+                                  "upstreams": [
+                                    {
+                                      "dial": "bitwarden-kjdev:80"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "match": [
+                        {
+                          "host": ["matrix.kristianjones.dev"]
+                        }
+                      ],
+                      "handle": [
+                        {
+                          "handler": "subroute",
+                          "routes": [
+                            {
+                              "match": [
+                                {
+                                  "path": ["*"]
+                                }
+                              ],
+                              "handle": [
+                                {
+                                  "handler": "reverse_proxy",
+                                  "upstreams": [
+                                    {
+                                      "dial": "matrix-kjdev:8008"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "match": [
+                        {
+                          "host": ["speedtest1.kristianjones.dev"]
+                        }
+                      ],
+                      "handle": [
+                        {
+                          "handler": "subroute",
+                          "routes": [
+                            {
+                              "handle": [
+                                {
+                                  "encodings": {
+                                    "gzip": {}
+                                  },
+                                  "handler": "encode"
+                                }
+                              ]
+                            },
+                            {
+                              "match": [
+                                {
+                                  "path": ["*"]
+                                }
+                              ],
+                              "handle": [
+                                {
+                                  "handler": "reverse_proxy",
+                                  "upstreams": [
+                                    {
+                                      "dial": "speedtest-kjdev:80"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "tls": {
+      "certificates": {
+        "load_folders": ["/TLS"]
+      }
+    }
+  }
+}
