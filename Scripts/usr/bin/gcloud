@@ -1,7 +1,0 @@
-CLI_IMAGE="kristianfoss/programs-gcloud:alpine"
-
-CLI_NAME="gcloud-cli"
-
-/usr/local/bin/ensure-docker-cli "${CLI_NAME}" "${CLI_IMAGE}" "-v ${HOME}:/tmp/home${HOME}  -e HOME=/tmp/home${HOME}"
-
-exec /usr/bin/docker exec -it --workdir "/tmp/home${PWD}" ${CLI_NAME} /google-cloud-sdk/bin/gcloud "${@}"

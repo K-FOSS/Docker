@@ -1,7 +1,7 @@
 CLI_NAME="${1}"
 CLI_IMAGE="${2}"
 
-CLI_CMD_ARGS="-d --name ${CLI_NAME} ${3}"
+CLI_CMD_ARGS="-itd --name ${CLI_NAME} --entrypoint /bin/sh ${3}"
 
 CLI_CMD="docker run ${CLI_CMD_ARGS} ${CLI_IMAGE}"
 
