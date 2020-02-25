@@ -1,0 +1,112 @@
+version: '3.7'
+
+networks:
+  publicWeb:
+  cabotInternal:
+
+volumes:
+  cabotDB:
+  tlsCertificates:
+
+services:
+  Web:
+    image: hectormolinero/caddy2:v17-amd64
+    restart: unless-stopped
+    command: ['run', '--config', '/etc/Caddy/Caddyfile.json']
+    volumes:
+      - ./Caddyfile.json:/etc/Caddy/Caddyfile.json
+      - tlsCertificates:/TLS:ro
+    ports:
+      - 80:8080
+      - 443:8443/tcp
+      - 443:8443/udp
+    networks:
+      - publicWeb
+    labels:
+      com.ouroboros.enable: 'true'
+      com.distributed-dns.web: 'true'
+
+  # Script that checks for updates to docker containers and recreates an identical container with new image if there is an update.
+  #
+  # I currently have it setup to only update containers with the docker tag of `com.ouroboros.enable: 'true'`
+  #
+  # Repo: https://github.com/pyouroboros/ouroboros
+  Ouroboros:
+    image: pyouroboros/ouroboros
+    restart: unless-stopped
+    container_name: ouroboros
+    hostname: ouroboros
+    env_file: ENVs/Ouroboros.env
+    environment:
+      CLEANUP: 'true'
+      LOG_LEVEL: 'error'
+      SELF_UPDATE: 'true'
+      LABEL_ENABLE: 'true'
+      LABELS_ONLY: 'true'
+      TZ: 'America/Winnipeg'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $HOME/.docker/config.json:/root/.docker/config.json:ro
+
+  # Cabot Monitoring and Alerting
+  cabotWeb:
+    image: cabotapp/cabot
+    restart: unless-stopped
+    command: sh -c "cabot migrate && gunicorn cabot.wsgi:application -b 0.0.0.0:5000 --workers=5"
+    env_file: ENVs/Cabot.env
+    depends_on:
+      - cabotDB
+      - cabotRabbitMQ
+    networks:
+      - cabotInternal
+      - publicWeb
+    labels:
+      com.ouroboros.enable: 'true'
+
+  catbotWorker:
+    image: cabotapp/cabot
+    restart: unless-stopped
+    command: celery worker -A cabot
+    env_file: ENVs/Cabot.env
+    networks:
+      - cabotInternal
+    depends_on:
+      - cabotWeb
+      - cabotDB
+      - cabotRabbitMQ
+    labels:
+      com.ouroboros.enable: 'true'
+
+  catbotBeat:
+    image: cabotapp/cabot
+    restart: unless-stopped
+    command: celery beat -A cabot
+    env_file: ENVs/Cabot.env
+    networks:
+      - cabotInternal
+    depends_on:
+      - cabotWeb
+      - cabotDB
+      - cabotRabbitMQ
+    labels:
+      com.ouroboros.enable: 'true'
+
+  cabotDB:
+    image: postgres:9.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: 'trust'
+    volumes:
+      - cabotDBData:/var/lib/postgresql/data
+    networks:
+      - cabotInternal
+    labels:
+      com.ouroboros.enable: 'true'
+
+  cabotRabbitMQ:
+    image: rabbitmq:3.6-alpine
+    restart: unless-stopped
+    networks:
+      - cabotInternal
+    labels:
+      com.ouroboros.enable: 'true'
