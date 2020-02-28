@@ -10,6 +10,7 @@ volumes:
   dnsZones:
   dnsConfig:
   subscriberData:
+  dashData:
 
 services:
   # Caddy Reverse Proxy to handle all traffic into the VPS1 Stack
@@ -79,6 +80,15 @@ services:
       ENABLE_ID_OBFUSCATION: 'true'
     labels:
       com.ouroboros.enable: 'true'
+
+  # Dashboard for easy access to all of my services and resources
+  dash-kjdev:
+    image: rmountjoy/dashmachine
+    restart: unless-stopped
+    volumes:
+      - dashData:/dashmachine/dashmachine/user_data
+    networks:
+      - publicWeb
 
   # Self hosted password manager with more features then LastPass
   #

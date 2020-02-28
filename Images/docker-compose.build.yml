@@ -26,6 +26,18 @@ x-simpleAlpineBuilder: &simpleAlpineBuilder
 x-advancedAlpineBuilder: &advancedAlpineBuilder
   context: ./Builders/AdvancedBuilder
 
+x-generalAlpineBuilder: &generalAlpineBuilder
+  context: ./Builders/
+  dockerfile: GeneralAlpine.Dockerfile
+
+x-gitStaticBuilder: &gitStaticBuilder
+  context: ./Builders/
+  dockerfile: GitStatic.Dockerfile
+
+x-scriptBuilder: &scriptBuilder
+  context: ./Builders
+  dockerfile: ScriptRunner.Dockerfile
+
 x-dockerCLIBuilder: &dockerCLIBuilder
   context: ./Docker
   target: cli
@@ -33,6 +45,11 @@ x-dockerCLIBuilder: &dockerCLIBuilder
 x-opensshBuilder: &opensshBuilder
   context: ./OpenSSH
   target: cli
+
+x-sshBuilder: &sshBuilder
+  context: ./OpenSSH
+  target: cli
+  dockerfile: Dockerfile.Oasis
 
 services:
   gitAlpine:
@@ -42,13 +59,156 @@ services:
       args:
         PKGS: 'git'
 
+  nodeBuilderImageBuild:
+    build:
+      context: ./Builders
+      dockerfile: Node.dockerfile
+      target: builder
+    image: kristianfoss/builders-node:build
+
+  nodeBuilderImageFetcher:
+    build:
+      context: ./Builders
+      dockerfile: Node.dockerfile
+      target: fetcher
+    image: kristianfoss/builders-node:fetcher
+
+  binScriptInstaller:
+    build:
+      <<: *scriptBuilder
+      args:
+        PKGS: 'jq'
+        SCRIPT_RAW_URL: 'https://raw.githubusercontent.com/KristianFJones/dotfiles/master/Extras/Scripts/install.sh'
+        SCRIPT_NAME: 'bin-installer'
+    image: kristianfjones/bin-installer:alpine
+
+  goBuildTest:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_PATH: /go/src/caddy
+        BINARY_NAME: caddy
+        GIT_REPO: https://github.com/caddyserver/caddy.git
+        GIT_BRANCH: v2.0.0-beta.13
+        BUILD_SETUP: 'cd cmd/caddy'
+        BUILD_CMD: 'go build -trimpath -tags netgo  -o /tmp/caddy/usr/bin/caddy'
+    image: kristianfoss/programs-caddy:scratch
+
+  goBuilderPGWeb:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_PATH: /go/src/pgweb
+        BUILD_SETUP: 'make setup'
+        BUILD_CMD: 'go build -o /tmp/pgweb/usr/bin/pgweb'
+        BINARY_NAME: pgweb
+        GIT_REPO: https://github.com/sosedoff/pgweb.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-pgweb:scratch
+
+  goBuilderMTR:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_PKGS: libcap
+        POST_BUILD_CMD: 'setcap cap_net_raw+ep /tmp/mtr/usr/bin/mtr'
+        BINARY_NAME: mtr
+        GIT_REPO: https://github.com/tonobo/mtr.git
+        GIT_BRANCH: master
+        BUILD_PATH: /go/src/mtr
+        BUILD_CMD: 'go build -trimpath -tags netgo -o /tmp/mtr/usr/bin/mtr'
+    image: kristianfoss/programs-gomtr:scratch
+
+  wgTools:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_IMAGE: 'alpine:3.11'
+        FINAL_BASE: 'alpine:3.11'
+        BUILD_PKGS: 'build-base linux-headers'
+        BINARY_NAME: wg
+        GIT_REPO: https://git.zx2c4.com/wireguard-tools
+        GIT_BRANCH: master
+        BUILD_PATH: /tmp/src/wireguard-tools
+        BUILD_CMD: 'make -C src'
+        POST_BUILD_CMD: 'mv /tmp/src/wireguard-tools/src/wg /tmp/wg/usr/bin/'
+        POST_CMD: 'ls -lah /usr/bin'
+    environment:
+      WITH_WGQUICK: 'yes'
+    image: kristianfoss/programs-wg:alpine
+    volumes:
+      - ./TMP/Wireguard/start.sh:/start.sh
+
+  wgGo:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        FINAL_BASE: 'alpine:3.11'
+        FINAL_CMD: 'apk add --no-cache iptables'
+        BUILD_PKGS: libcap
+        POST_BUILD_CMD: 'setcap cap_net_raw+ep /tmp/wireguard-go/usr/bin/wireguard-go'
+        BINARY_NAME: wireguard-go
+        GIT_REPO: https://git.zx2c4.com/wireguard-go
+        GIT_BRANCH: master
+        BUILD_PATH: /go/src/wireguard-go
+        BUILD_CMD: 'go build -trimpath -tags netgo -o /tmp/wireguard-go/usr/bin/wireguard-go'
+    image: kristianfoss/programs-wireguard-go:alpine
+
+  MTR:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_IMAGE: 'alpine:3.11'
+        BUILD_PKGS: 'libcap automake autoconf pkgconfig musl-dev libc-dev'
+        BUILD_SETUP: './bootstrap.sh'
+        BUILD_CONFIGURE: './configure --without-gtk --disable-ipv6 --disable-dependency-tracking --disable-bash-completion'
+        POST_BUILD_CMD: 'mv /tmp/src/mtr/mtr /tmp/src/mtr/mtr-packet /tmp/mtr/usr/bin/'
+        BINARY_NAME: mtr
+        FINAL_BASE: 'alpine:3.11'
+        GIT_REPO: https://github.com/traviscross/mtr.git
+        GIT_BRANCH: master
+        BUILD_PATH: /tmp/src/mtr
+        BUILD_CMD: 'make -j2'
+    image: kristianfoss/programs-mtr:alpine
+
+  # SAMBA:
+  #   build:
+  #     <<: *gitStaticBuilder
+  #     args:
+  #       BUILD_IMAGE: 'alpine:3.11'
+  #       BUILD_PKGS: 'python3-dev build-base perl zlib-dev gnutls-dev'
+  #       BUILD_SETUP: './bootstrap.sh'
+  #       BUILD_CONFIGURE: './configure '
+  #       POST_BUILD_CMD: 'mv /tmp/src/mtr/mtr /tmp/src/mtr/mtr-packet /tmp/mtr/usr/bin/'
+  #       BINARY_NAME: smaba
+  #       FINAL_BASE: 'alpine:3.11'
+  #       GIT_REPO: https://github.com/samba-team/samba.git
+  #       GIT_BRANCH: master
+  #       BUILD_PATH: /tmp/src/
+  #       BUILD_CMD: 'make -j2'
+  #   image: kristianfoss/programs-mtr:alpine
+
+  # busyBoxGeneralAlpine:
+  #   build:
+  #     <<: *generalAlpineBuilder
+  #     args:
+  #       BUILD_SETUP: 'make defconfig && make'
+  #       BUILD_CMD: './make_single_applets.sh'
+  #       BUILD_PKGS: ''
+  #       BUILD_PKG_ARGS: ''
+  #       SRC_URL: 'https://codeload.github.com/mirror/busybox/tar.gz/master'
+
   keybaseAlpine:
     image: kristianfoss/programs-keybase:alpine-client
     build:
       <<: *simpleAlpineBuilder
       args:
         PKG_ARGS: '--repository http://dl-cdn.alpinelinux.org/alpine/edge/testing'
-        PKGS: 'keybase-client'
+        PKGS: 'keybase-client gnupg'
 
   sshScratch:
     build:
@@ -57,6 +217,20 @@ services:
         CLI_NAME: 'ssh'
     image: kristianfoss/programs-openssh:scratch-ssh
 
+  # sshLabScratch:
+  #   build:
+  #     <<: *sshBuilder
+  #     args:
+  #       CLI_NAME: 'ssh'
+  #   image: kristianfoss/programs-lab:scratch-ssh
+
+  # ssh-keygenLabScratch:
+  #   build:
+  #     <<: *sshBuilder
+  #     args:
+  #       CLI_NAME: 'ssh-keygen'
+  #   image: kristianfoss/programs-lab:scratch-ssh-keygen
+
   sshdScratch:
     build:
       context: ./OpenSSH
@@ -64,6 +238,20 @@ services:
       args:
         CLI_NAME: 'sshd'
     image: kristianfoss/programs-openssh:scratch-sshd
+
+  sshdAlpine:
+    build:
+      context: ./OpenSSH
+      target: sshd
+      args:
+        CLI_NAME: 'sshd'
+        FINAL_BASE: 'alpine:3.11'
+    image: kristianfoss/programs-openssh:alpine-sshd
+
+  monoScratch:
+    build:
+      context: ./Mono
+    image: kristianfoss/programs-mono:scratch
 
   sshagentScratch:
     build:
@@ -86,6 +274,12 @@ services:
       args:
         CLI_NAME: 'ssh-keygen'
     image: kristianfoss/programs-openssh:scratch-ssh-keygen
+
+  pritunlWeb:
+    image: kristianfoss/lab/pritunl-web
+    build:
+      context: ./Pritunl
+      target: pritunl-web
 
   gcloudAlpine:
     build:
@@ -121,3 +315,22 @@ services:
         FINAL_BASE: 'alpine:3.11'
         CLI_NAME: 'dockerd'
     image: kristianfoss/programs-docker:alpine-dockerd
+  # codeServer:
+  #   build:
+  #     context: ./TMP/Code-Server/Scratch
+  #     args:
+  #       GITHUB_TOKEN: ${GITHUB_TOKEN}
+  #       githubToken: ${GITHUB_TOKEN}
+  #   image: docker.pkg.github.com/k-foss/docker/programs-code-server:scratch
+  # codeServer:
+  #   build:
+  #     context: ./TMP/Code-Server/Ubuntu
+  #     args:
+  #       GITHUB_TOKEN: ${GITHUB_TOKEN}
+  #       githubToken: ${GITHUB_TOKEN}
+  #   image: kristianfoss/programs-code-server
+  # theia:
+  #   build:
+  #     context: ./TMP/Theia/
+  #     args:
+  #       GITHUB_TOKEN: ${GITHUB_TOKEN}

@@ -57,9 +57,9 @@ COPY --from=pamBuild /tmp/linux-pam/libpam/.libs/libpam.a /tmp/linux-pam/libpam/
 RUN apk add --no-cache linux-pam-dev libselinux-dev pcre-dev
 
 RUN mkdir -p /tmp/openssh \
-  && wget -O - https://openbsd.cs.toronto.edu/pub/OpenBSD/OpenSSH/portable/openssh-8.1p1.tar.gz | tar xz -C /tmp/openssh --strip-components=1
+  && wget -O - https://openbsd.cs.toronto.edu/pub/OpenBSD/OpenSSH/portable/openssh-8.2p1.tar.gz | tar xz -C /tmp/openssh --strip-components=1
 
-RUN  cd /tmp/openssh \
+RUN cd /tmp/openssh \
   && ./configure \
   --with-zlib=/lib/zlib.a \
   --with-ldflags=-static \
@@ -116,11 +116,35 @@ ENTRYPOINT ["/usr/bin/cliLink"]
 
 
 
+FROM ${ALPINE} as bash-builder
+RUN apk add --no-cache build-base bash
+
+ENV SHELL=/bin/bash
+
+RUN mkdir -p /tmp/bash \
+  && wget -O - http://ftp.gnu.org/gnu/bash/bash-5.0.tar.gz | tar xz -C /tmp
+
+COPY patch.sh /tmp/
+
+ENV LDFLAGS="-static"
+
+RUN cd /tmp/ \
+  && ls \
+  && ./patch.sh \
+  && cd ./bash-5.0 \
+  && CFLAGS="$CFLAGS -Os" ./configure --without-bash-malloc \
+  && make
+
+
+
+
 FROM ${ALPINE} as prepareSSHD
+COPY --from=bash-builder /tmp/ /tmp/
 COPY --from=builder /tmp/openssh/sshd /tmp/sshd/usr/bin/
 COPY --from=kristianfoss/programs-socat /usr/bin/socat /tmp/sshd/usr/bin/
 COPY --from=busyboxBuild /tmp/busybox/busybox_GETTY /tmp/sshd/sbin/getty
 COPY --from=busyboxBuild /tmp/busybox/busybox_HUSH /tmp/sshd/bin/sh
+COPY --from=bash-builder /tmp/bash-5.0/bash /tmp/sshd/bin/bash
 COPY --from=busyboxBuild /tmp/busybox/busybox_PS /tmp/sshd/usr/bin/ps
 COPY --from=busyboxBuild /tmp/busybox/busybox_RESIZE /tmp/sshd/usr/bin/resize
 COPY --from=busyboxBuild /tmp/busybox/busybox_STTY /tmp/sshd/bin/stty

@@ -1,4 +1,8 @@
-#!/bin/sh
-TTY_FILE=$(/usr/bin/tty)
-
-/usr/bin/socat FILE:"$TTY_FILE",raw,echo=0 UNIX-CONNECT:/tmp/docker-sshd-shell.sock
+#!/bin/bash
+if [ -t 1 ]; then
+  TTY_FILE=$(/usr/bin/tty)
+  /usr/bin/socat FILE:"$TTY_FILE",raw,echo=0 UNIX-CONNECT:/tmp/docker-sshd-shell.sock /bin/sh -i
+else
+  shift
+  echo "${@}" | /usr/bin/socat - UNIX-CONNECT:/tmp/docker-sshd-shell.sock
+fi

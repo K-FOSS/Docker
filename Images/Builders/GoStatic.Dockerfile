@@ -6,35 +6,52 @@ ARG GIT_REPO
 ARG GIT_BRANCH='master'
 
 FROM golang:${GO_VERSION} as builder
+
 ARG PKG_ARGS=""
 ARG BUILD_PKGS
-ARG GIT_REPO
-
-
 RUN apk add --no-cache ${PKG_ARGS} git ca-certificates build-base ${BUILD_PKGS}
+
+
+ARG BINARY_NAME
+RUN mkdir -p /go/src/${BINARY_NAME} \
+  && mkdir -p /tmp/${BINARY_NAME}/usr/bin
+
 
 ARG GIT_REPO
 ARG GIT_BRANCH
-ARG BINARY_NAME
-RUN mkdir -p /go/src/${BINARY_NAME} \
-  && git clone -b ${GIT_BRANCH} ${GIT_REPO} /go/src/${BINARY_NAME} --single-branch
+RUN git clone -b ${GIT_BRANCH} ${GIT_REPO} /go/src/${BINARY_NAME} --single-branch
 
-RUN mkdir -p /tmp/${BINARY_NAME}/usr/bin
+
+WORKDIR /go/src/${BINARY_NAME}
 
 ARG BUILD_SETUP
 ARG GO_BUILD_ARGS
-
-RUN cd /go/src/${BINARY_NAME} \
-  && ${BUILD_SETUP} \
+RUN ${BUILD_SETUP} \
   && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ${GO_BUILD_ARGS} -ldflags '-extldflags "-static" -s -w' -o /tmp/${BINARY_NAME}/usr/bin/${BINARY_NAME}
 
-RUN cd /tmp/${BINARY_NAME}/usr/bin \
-  && ln -s ./${BINARY_NAME} ./cliLink \
-  && chmod +X /tmp/${BINARY_NAME}/usr/bin/cliLink
+
+ARG POST_BUILD_CMD='echo "No post build command has been set"'
+RUN ${POST_BUILD_CMD}
+
+
+WORKDIR /tmp/${BINARY_NAME}/usr/bin
+RUN ln -s ./${BINARY_NAME} ./cliLink \
+  && chmod +X ./cliLink
+
+
+FROM alpine:3.11
+RUN apk add --no-cache libcap
+
+COPY --from=builder /tmp/mtr /tmp/mtr
+
+RUN getcap /tmp/mtr/usr/bin/mtr
+
+
 
 FROM ${FINAL_BASE}
 ARG BINARY_NAME
 
 COPY --from=builder /tmp/${BINARY_NAME} /
+
 
 ENTRYPOINT ["/usr/bin/cliLink"]
