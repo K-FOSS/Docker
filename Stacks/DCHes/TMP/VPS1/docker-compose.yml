@@ -2,43 +2,112 @@ version: '3.7'
 
 networks:
   publicWeb:
+  jitsiMeet:
+  cabotInternal:
 
 volumes:
-  tlsCertificates:
   bitwardenData:
   bitwardenBackups:
+  tlsCertificates:
   dnsZones:
   dnsConfig:
   subscriberData:
   dashData:
+  jitsiWebConfig:
+  jitsiProsodyConfig:
+  jitsiJicofoConfig:
+  jitsiVideoBridgeConfig:
+  cabotDBData:
 
 services:
-  # Caddy Reverse Proxy to handle all traffic into the VPS1 Stack
-  #
-  # Repo: https://github.com/caddyserver/caddy
   Web:
-    image: hectormolinero/caddy2:v17-amd64
+    image: caddy/caddy:alpine
     restart: unless-stopped
-    command: ['run', '--config', '/etc/Caddy/Caddyfile.json']
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
     volumes:
-      - ./Caddyfile.json:/etc/Caddy/Caddyfile.json:ro
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json
       - tlsCertificates:/TLS:ro
     ports:
-      - 80:8080
-      - 443:8443/tcp
-      - 443:8443/udp
+      - 80:80
+      - 443:443/tcp
+      - 443:443/udp
     networks:
       - publicWeb
     labels:
       com.ouroboros.enable: 'true'
       com.distributed-dns.web: 'true'
 
+  jitsiWeb:
+    image: jitsi/web
+    restart: unless-stopped
+    env_file: ENVs/Jitsi.env
+    volumes:
+      - jitsiWebConfig:/config
+    networks:
+      jitsiMeet:
+        aliases:
+          - meet.jitsi
+      publicWeb:
+    environment:
+      ENABLE_AUTH: '0'
+      ENABLE_GUESTS: '1'
+      ENABLE_LETSENCRYPT: '0'
+      ENABLE_HTTP_REDIRECT: '0'
+      ENABLE_TRANSCRIPTIONS: '0'
+      DISABLE_HTTPS: '1'
+      JICOFO_AUTH_USER: 'focus'
+
+    # XMPP server
+  jitsiProsody:
+    image: jitsi/prosody
+    restart: unless-stopped
+    env_file: ENVs/Jitsi.env
+    expose:
+      - '5222'
+      - '5347'
+      - '5280'
+    volumes:
+      - jitsiProsodyConfig:/config
+    networks:
+      jitsiMeet:
+        aliases:
+          - xmpp.meet.jitsi
+
+  jitsiJicofo:
+    image: jitsi/jicofo
+    restart: unless-stopped
+    env_file: ENVs/Jitsi.env
+    volumes:
+      - jitsiJicofoConfig:/config
+    networks:
+      jitsiMeet:
+        aliases:
+          - jicofo
+    depends_on:
+      - jitsiProsody
+
+  jitsiJVB:
+    image: jitsi/jvb
+    restart: unless-stopped
+    env_file: ENVs/Jitsi.env
+    volumes:
+      - jitsiVideoBridgeConfig:/config
+    networks:
+      jitsiMeet:
+        aliases:
+          - jvb
+    ports:
+      - 10000:10000/udp
+      - 4443:4443
+    depends_on:
+      - jitsiProsody
+
   # Script that checks for updates to docker containers and recreates an identical container with new image if there is an update.
   #
   # I currently have it setup to only update containers with the docker tag of `com.ouroboros.enable: 'true'`
   #
   # Repo: https://github.com/pyouroboros/ouroboros
-  ouroboros:
+  Ouroboros:
     image: pyouroboros/ouroboros
     restart: unless-stopped
     container_name: ouroboros
@@ -66,9 +135,6 @@ services:
     labels:
       com.ouroboros.enable: 'true'
 
-  # Self hosted speed test to test connection to VPS and for friends and clients to test their network connection
-  #
-  # Repo: https://github.com/librespeed/speedtest
   speedtest-kjdev:
     image: adolfintel/speedtest
     restart: unless-stopped
@@ -90,12 +156,38 @@ services:
     networks:
       - publicWeb
 
-  # Self hosted password manager with more features then LastPass
-  #
-  # I'm running the third party unofficcal BitwardenRS Server & Image
-  #
-  # Offical Site: https://bitwarden.com/
-  # Repo: https://github.com/dani-garcia/bitwarden_rs
+  # BIND9 Server for serving the Zones from Distributed DNS. Zones are fetched and container is controlled by the DNSDL Service
+  ns1-kjdev:
+    image: resystit/bind9:latest
+    restart: unless-stopped
+    depends_on:
+      - SubscriberDL
+    volumes:
+      - dnsZones:/zones:ro
+      - dnsConfig:/etc/bind:ro
+    ports:
+      - 53:53/udp
+    labels:
+      com.distributed-dns.bind: 'true'
+      com.ouroboros.enable: 'true'
+
+  SubscriberDL:
+    image: docker.pkg.github.com/kristianfjones/distributed-dns/distributed-dns-subscriberdl
+    restart: unless-stopped
+    env_file: ENVs/SubscriberDL.env
+    extra_hosts:
+      - 'dns.kristianjones.dev:35.188.2.39'
+    environment:
+      API_URL: 'https://dns.kristianjones.dev'
+    volumes:
+      - subscriberData:/data/State
+      - dnsZones:/data/Zones
+      - tlsCertificates:/data/TLS
+      - dnsConfig:/data/BIND
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      com.ouroboros.enable: 'true'
+
   bitwarden-kjdev:
     image: bitwardenrs/server:alpine
     restart: unless-stopped
@@ -130,32 +222,65 @@ services:
       UID: '0'
       GID: '0'
 
-  # BIND9 Server for serving the Zones from Distributed DNS. Zones are fetched and container is controlled by the DNSDL Service
-  ns1-kjdev:
-    image: resystit/bind9:latest
+  # Cabot Monitoring and Alerting
+  cabotWeb:
+    image: cabotapp/cabot
     restart: unless-stopped
+    command: sh -c "cabot migrate && gunicorn cabot.wsgi:application -b 0.0.0.0:5000 --workers=5"
+    env_file: ENVs/Cabot.env
     depends_on:
-      - DNSDL
-    volumes:
-      - dnsZones:/zones:ro
-      - dnsConfig:/etc/bind:ro
-    ports:
-      - 53:53/udp
+      - cabotDB
+      - cabotRabbitMQ
+    networks:
+      - cabotInternal
+      - publicWeb
     labels:
-      com.distributed-dns.bind: 'true'
       com.ouroboros.enable: 'true'
 
-  SubscriberDL:
-    image: docker.pkg.github.com/kristianfjones/distributed-dns/distributed-dns-subscriberdl
+  catbotWorker:
+    image: cabotapp/cabot
     restart: unless-stopped
-    env_file: ENVs/SubscriberDL.env
+    command: celery worker -A cabot
+    env_file: ENVs/Cabot.env
+    networks:
+      - cabotInternal
+    depends_on:
+      - cabotWeb
+      - cabotDB
+      - cabotRabbitMQ
+    labels:
+      com.ouroboros.enable: 'true'
+
+  catbotBeat:
+    image: cabotapp/cabot
+    restart: unless-stopped
+    command: celery beat -A cabot
+    env_file: ENVs/Cabot.env
+    networks:
+      - cabotInternal
+    depends_on:
+      - cabotWeb
+      - cabotDB
+      - cabotRabbitMQ
+    labels:
+      com.ouroboros.enable: 'true'
+
+  cabotDB:
+    image: postgres:9.6-alpine
+    restart: unless-stopped
     environment:
-      API_URL: 'https://dns.kristianjones.dev'
+      POSTGRES_HOST_AUTH_METHOD: 'trust'
     volumes:
-      - subscriberData:/data/State
-      - dnsZones:/data/Zones
-      - tlsCertificates:/data/TLS
-      - dnsConfig:/data/BIND
-      - /var/run/docker.sock:/var/run/docker.sock
+      - cabotDBData:/var/lib/postgresql/data
+    networks:
+      - cabotInternal
+    labels:
+      com.ouroboros.enable: 'true'
+
+  cabotRabbitMQ:
+    image: rabbitmq:3.6-alpine
+    restart: unless-stopped
+    networks:
+      - cabotInternal
     labels:
       com.ouroboros.enable: 'true'

@@ -37,3 +37,16 @@ secrets
 
 **/ENVs/*.env
 !**/ENVs/*.example.env
+
+## TEMP REMOVE ONCE CLEANUP IS DONE
+Stacks/Busybox
+Stacks/RootlessDocker
+Stacks/X11
+Stacks/SSHServer
+Stacks/VS-Code
+Programs/Xpra
+Programs/OpenSSH
+Source/**
+Lab
+Images/.env
+Archive

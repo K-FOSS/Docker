@@ -1,0 +1,7 @@
+CLI_IMAGE="kristianfoss/programs-wireguard-go:alpine"
+
+CLI_NAME="wireguard-go-cli"
+
+ensure-docker-cli "${CLI_NAME}" "${CLI_IMAGE}" "-v ${HOME}:/tmp/home${HOME} --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun  -e HOME=/tmp/home${HOME}"
+
+exec docker exec -it --workdir "/tmp/home${PWD}" ${CLI_NAME} /usr/bin/wireguard-go "${@}"
