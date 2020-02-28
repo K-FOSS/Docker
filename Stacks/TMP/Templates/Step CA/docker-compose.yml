@@ -1,0 +1,17 @@
+version: '3.7'
+
+volumes:
+  StepCAData:
+    external:
+      name: step-ca-data
+
+services:
+  StepCA:
+    image: kristianfoss/programs-step:scratch-certificates
+    tty: true
+    stdin_open: true
+    command: ['/.step/config/ca.json']
+    ports:
+      - 5870:5870
+    volumes:
+      - StepCAData:/.step

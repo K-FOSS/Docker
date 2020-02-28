@@ -175,6 +175,48 @@ services:
         BUILD_CMD: 'make -j2'
     image: kristianfoss/programs-mtr:alpine
 
+  stepCLIScratch:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_PATH: /go/src/step
+        BUILD_CMD: 'make build'
+        POST_BUILD_CMD: 'mv /go/src/step/bin/step /tmp/step/usr/bin/step'
+        BINARY_NAME: step
+        GIT_REPO: https://github.com/smallstep/cli.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-step:scratch-cli
+
+  stepCLIScratch:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        FINAL_BASE: 'alpine:3.11'
+        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_PATH: /go/src/step
+        BUILD_CMD: 'make build'
+        POST_BUILD_CMD: 'mv /go/src/step/bin/step /tmp/step/usr/bin/step'
+        BINARY_NAME: step
+        GIT_REPO: https://github.com/smallstep/cli.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-step:alpine-cli
+
+
+  stepCertificatesScratch:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_PATH: /go/src/step-ca
+        BUILD_CMD: 'make build'
+        POST_BUILD_CMD: 'mv /go/src/step-ca/bin/step-ca /tmp/step-ca/usr/bin/step-ca'
+        BINARY_NAME: step-ca
+        GIT_REPO: https://github.com/smallstep/certificates.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-step:scratch-certificates
+
+
   # SAMBA:
   #   build:
   #     <<: *gitStaticBuilder
