@@ -179,7 +179,7 @@ services:
     build:
       <<: *gitStaticBuilder
       args:
-        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_IMAGE: 'golang:1.13.7-alpine'
         BUILD_PATH: /go/src/step
         BUILD_CMD: 'make build'
         POST_BUILD_CMD: 'mv /go/src/step/bin/step /tmp/step/usr/bin/step'
@@ -193,7 +193,7 @@ services:
       <<: *gitStaticBuilder
       args:
         FINAL_BASE: 'alpine:3.11'
-        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_IMAGE: 'golang:1.13.7-alpine'
         BUILD_PATH: /go/src/step
         BUILD_CMD: 'make build'
         POST_BUILD_CMD: 'mv /go/src/step/bin/step /tmp/step/usr/bin/step'
@@ -207,7 +207,7 @@ services:
     build:
       <<: *gitStaticBuilder
       args:
-        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_IMAGE: 'golang:1.13.7-alpine'
         BUILD_PATH: /go/src/step-ca
         BUILD_CMD: 'make build'
         POST_BUILD_CMD: 'mv /go/src/step-ca/bin/step-ca /tmp/step-ca/usr/bin/step-ca'
@@ -216,6 +216,20 @@ services:
         GIT_BRANCH: master
     image: kristianfoss/programs-step:scratch-certificates
 
+  vaultAlpine:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        FINAL_BASE: 'alpine:3.11'
+        BUILD_IMAGE: 'golang:1.13.7-alpine'
+        BUILD_PKGS: 'bash git'
+        BUILD_PATH: /go/src/vault
+        BUILD_SETUP: 'cd command'
+        BUILD_CMD: 'go build -trimpath -tags netgo -o /tmp/vault/usr/bin/vault'
+        BINARY_NAME: vault
+        GIT_REPO: https://github.com/hashicorp/vault.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-vault:alpine-vault
 
   # SAMBA:
   #   build:
