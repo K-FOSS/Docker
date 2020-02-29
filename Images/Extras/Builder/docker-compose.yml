@@ -1,0 +1,34 @@
+version: '3.7'
+
+volumes:
+  dockerSocket:
+    external:
+      name: docker-socket
+
+services:
+  DockerDaemon:
+    image: kristianfoss/programs-docker:alpine-dockerd-lab
+    build:
+      context: ./Docker/
+      target: dockerd
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    volumes:
+      - dockerSocket:/var/run
+
+  Docker:
+    image: kristianfoss/programs-docker:alpine-docker-lab
+    entrypoint: ['/bin/sh']
+    tty: true
+    stdin_open: true
+    # command: ['buildx', 'bake', '-f', './docker-compose.build.yml']
+    working_dir: /workspace
+    depends_on:
+      - DockerDaemon
+    build:
+      context: ./Docker/
+      target: docker
+    volumes:
+      - dockerSocket:/var/run
+      - /root/workspace/Images:/workspace

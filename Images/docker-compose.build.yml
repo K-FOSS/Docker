@@ -351,10 +351,10 @@ services:
         FINAL_BASE: 'alpine:3.11'
     image: kristianfoss/programs-openssh:alpine-sshd
 
-  monoScratch:
-    build:
-      context: ./Mono
-    image: kristianfoss/programs-mono:scratch
+  # monoScratch:
+  #   build:
+  #     context: ./Mono
+  #   image: kristianfoss/programs-mono:scratch
 
   sshagentScratch:
     build:

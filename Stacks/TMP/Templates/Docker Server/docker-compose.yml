@@ -1,0 +1,35 @@
+version: '3.7'
+
+volumes: 
+  dockerSocket:
+    external: 
+      name: docker-socket
+
+services:
+  DockerDaemon:
+    image: kristianfoss/programs-docker:alpine-dockerd-lab
+    build:
+      context: ./Docker/
+      target: dockerd
+    cap_add: 
+      - NET_ADMIN
+    restart: unless-stopped
+
+    volumes:
+      - dockerSocket:/var/run
+
+  Docker:
+    image: kristianfoss/programs-docker:alpine-docker-lab
+    build:
+      context: ./Docker/
+      target: docker
+    volumes:
+      - dockerSocket:/var/run
+
+  # BuildX:
+  #   image: kristianfoss/programs-docker:alpine-buildx-lab
+  #   build:
+  #     context: ./Docker/
+  #     target: buildx
+  #   volumes:
+  #     - dockerSocket:/var/run
