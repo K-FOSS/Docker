@@ -216,20 +216,67 @@ services:
         GIT_BRANCH: master
     image: kristianfoss/programs-step:scratch-certificates
 
-  vaultAlpine:
+  # vaultAlpine:
+  #   build:
+  #     <<: *gitStaticBuilder
+  #     args:
+  #       FINAL_BASE: 'alpine:3.11'
+  #       BUILD_IMAGE: 'node:10-alpine3.11'
+  #       BUILD_PKGS: 'bash git yarn go'
+  #       BUILD_PATH: /go/src/vault
+  #       # make dev
+  #       BUILD_SETUP: 'make bootstrap'
+  #       BUILD_CMD: 'make static-dist dev-ui XC_ARCH=amd64 XC_OS=linux XC_OSARCH=linux/amd64 LD_FLAGS=""'
+  #       POST_BUILD_CMD: 'mv /go/src/vault/pkg/linux_amd64/vault /tmp/vault/usr/bin/vault'
+  #       BINARY_NAME: vault
+  #       GIT_REPO: https://github.com/hashicorp/vault.git
+  #       GIT_BRANCH: master
+  #   image: kristianfoss/programs-vault:alpine-vault
+
+  teleportAlpine:
     build:
       <<: *gitStaticBuilder
       args:
         FINAL_BASE: 'alpine:3.11'
         BUILD_IMAGE: 'golang:1.13.7-alpine'
-        BUILD_PKGS: 'bash git'
-        BUILD_PATH: /go/src/vault
-        BUILD_SETUP: 'cd command'
-        BUILD_CMD: 'go build -trimpath -tags netgo -o /tmp/vault/usr/bin/vault'
-        BINARY_NAME: vault
-        GIT_REPO: https://github.com/hashicorp/vault.git
+        BUILD_PKGS: 'zip'
+        BUILD_PATH: /go/src/github.com/gravitational/teleport
+        BUILD_CMD: 'make full'
+        POST_BUILD_CMD: 'cp /go/src/github.com/gravitational/teleport/build/teleport /go/src/github.com/gravitational/teleport/build/tctl /tmp/teleport/usr/bin/'
+        BINARY_NAME: teleport
+        GIT_REPO: https://github.com/gravitational/teleport.git
         GIT_BRANCH: master
-    image: kristianfoss/programs-vault:alpine-vault
+    image: kristianfoss/programs-teleport:alpine-teleport
+
+  teleportTCTLAlpine:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        FINAL_BASE: 'alpine:3.11'
+        BUILD_IMAGE: 'golang:1.13.7-alpine'
+        BUILD_PKGS: 'zip'
+        BUILD_PATH: /go/src/github.com/gravitational/teleport
+        BUILD_CMD: 'make full'
+        POST_BUILD_CMD: 'mv /go/src/github.com/gravitational/teleport/build/tctl /tmp/tctl/usr/bin/tctl'
+        BINARY_NAME: tctl
+        GIT_REPO: https://github.com/gravitational/teleport.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-teleport:alpine-tctl
+
+  teleportTSHAlpine:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        FINAL_BASE: 'alpine:3.11'
+        BUILD_IMAGE: 'golang:1.13.7-alpine'
+        BUILD_PKGS: 'zip'
+        BUILD_PATH: /go/src/github.com/gravitational/teleport
+        BUILD_CMD: 'make full'
+        POST_BUILD_CMD: 'mv /go/src/github.com/gravitational/teleport/build/tsh /tmp/tsh/usr/bin/tsh'
+        BINARY_NAME: tsh
+        GIT_REPO: https://github.com/gravitational/teleport.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-teleport:alpine-tsh
 
   # SAMBA:
   #   build:
@@ -331,16 +378,16 @@ services:
         CLI_NAME: 'ssh-keygen'
     image: kristianfoss/programs-openssh:scratch-ssh-keygen
 
-  pritunlWeb:
-    image: kristianfoss/lab/pritunl-web
-    build:
-      context: ./Pritunl
-      target: pritunl-web
+  # pritunlWeb:
+  #   image: kristianfoss/lab/pritunl-web
+  #   build:
+  #     context: ./Pritunl
+  #     target: pritunl-web
 
-  gcloudAlpine:
-    build:
-      context: ./TMP/GCloud
-    image: kristianfoss/programs-gcloud:alpine
+  # gcloudAlpine:
+  #   build:
+  #     context: ./TMP/GCloud
+  #   image: kristianfoss/programs-gcloud:alpine
 
   dockerScratch:
     build:
