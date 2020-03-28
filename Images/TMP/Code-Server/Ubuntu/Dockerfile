@@ -2,7 +2,7 @@ ARG FINAL_BASE='scratch'
 ARG ALPINE='alpine:3.11'
 ARG githubToken
 
-FROM node:12.14.0 as builder
+FROM node:12.16.1 as builder
 ENV VSCODE_VERSION="1.41.1"
 ARG githubToken
 
