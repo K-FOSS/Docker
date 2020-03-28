@@ -1,4 +1,4 @@
-FROM golang:1.13.5-alpine as builder
+FROM golang:1.14.1-alpine as builder
 ARG CADDY_SOURCE_VERSION=v2
 
 WORKDIR /src
