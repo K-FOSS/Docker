@@ -1,4 +1,6 @@
+#!/bin/bash
 BASEDIR=$(dirname "$0")
+
 # BUILDER="${BASEDIR}/buildBuilder.sh"
 # DOCKER_IMAGE="$(${BUILDER})"
 # RUNNER="${BASEDIR}/runner.sh ${DOCKER_IMAGE}"
@@ -18,11 +20,12 @@ PUSH_IMAGES="kristianfoss/programs-vault \
 
 
 cd "${BASEDIR}/../Extras/Builder/"
-
 ./setup.sh
 docker-compose up -d --build
-docker-compose exec -T -w /workspace Docker docker buildx bake -f ./docker-compose.build.yml
 
+echo ${PASSWORD} | docker-compose exec -w /workspace Docker docker login -u ${USERNAME} --password-stdin
+docker-compose exec -T -w /workspace Docker docker buildx bake --pull -f ./docker-compose.build.yml
+docker-compose exec -T -w /workspace Docker docker image ls
 
 # ${RUNNER} buildx bake -f ./docker-compose.build.yml
 
