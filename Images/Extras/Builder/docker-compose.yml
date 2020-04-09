@@ -22,7 +22,6 @@ services:
   Docker:
     image: kristianfoss/lab/programs-docker:dockercli
     entrypoint: ['/bin/sh']
-    tty: true
     stdin_open: true
     # command: ['buildx', 'bake', '-f', './docker-compose.build.yml']
     working_dir: /workspace
