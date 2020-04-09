@@ -12,5 +12,5 @@ jobs:
         run: ./bin/buildPush.sh
         working-directory: ./Images
         env:
-          USERNAME: KristianFJones
+          USERNAME: kristianfjones
           PASSWORD: ${{ secrets.DOCKER_HUB_TOKEN }}
