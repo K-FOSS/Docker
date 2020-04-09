@@ -1,3 +1,8 @@
+BASEDIR=$(dirname "$0")
+# BUILDER="${BASEDIR}/buildBuilder.sh"
+# DOCKER_IMAGE="$(${BUILDER})"
+# RUNNER="${BASEDIR}/runner.sh ${DOCKER_IMAGE}"
+
 PUSH_IMAGES="kristianfoss/programs-vault \
   kristianfoss/programs-step \
   kristianfoss/programs-keybase \
@@ -11,9 +16,17 @@ PUSH_IMAGES="kristianfoss/programs-vault \
   kristianfoss/programs-openssh \
   kristianfoss/programs-gcloud"
 
-docker buildx bake -f ./docker-compose.build.yml
+
+cd "${BASEDIR}/../Extras/Builder/"
+
+./setup.sh
+docker-compose up -d --build
+docker-compose exec -w /workspace Docker docker buildx bake -f ./docker-compose.build.yml
 
 
-for IMAGE in ${PUSH_IMAGES}; do
-  docker push ${IMAGE}
-done
+# ${RUNNER} buildx bake -f ./docker-compose.build.yml
+
+
+# for IMAGE in ${PUSH_IMAGES}; do
+#   docker push ${IMAGE}
+# done
