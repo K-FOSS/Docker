@@ -23,13 +23,13 @@ cd "${BASEDIR}/../Extras/Builder/"
 ./setup.sh
 docker-compose up -d --build
 
-echo ${PASSWORD} | docker-compose exec -w /workspace Docker docker login -u ${USERNAME} --password-stdin
+docker-compose exec -T -w /workspace Docker docker login -u ${USERNAME} -p ${PASSWORD} 
 docker-compose exec -T -w /workspace Docker docker buildx bake --pull -f ./docker-compose.build.yml
 docker-compose exec -T -w /workspace Docker docker image ls
 
 # ${RUNNER} buildx bake -f ./docker-compose.build.yml
 
 
-# for IMAGE in ${PUSH_IMAGES}; do
-#   docker push ${IMAGE}
-# done
+for IMAGE in ${PUSH_IMAGES}; do
+  docker-compose exec -T -w /workspace Docker docker push ${IMAGE}
+done
