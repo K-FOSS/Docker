@@ -35,7 +35,15 @@ RUN cd /tmp/cli/usr/bin \
   && chmod +X /tmp/cli/usr/bin/cliLink
 
 
+
+
 FROM ${FINAL_BASE} as cli
+RUN mkdir -p /root/.docker/cli-plugins \
+  && wget -O /root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64  \
+  && chmod +x /root/.docker/cli-plugins/docker-buildx
+
+COPY ./config.json /root/.docker/config.json
+
 COPY --from=prepareCLI /tmp/cli /
 
 USER user
