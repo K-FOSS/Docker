@@ -3,11 +3,11 @@
 ## Template
 
 ```sh
-CLI_IMAGE="kristianfoss/programs-gcloud:alpine"
+CLI_IMAGE="CLI_IMAGE"
 
-CLI_NAME="gcloud-cli"
+CLI_NAME="CLI_NAME-cli"
 
 ensure-docker-cli "${CLI_NAME}" "${CLI_IMAGE}" "-v ${HOME}:/tmp/home${HOME}  -e HOME=/tmp/home${HOME}"
 
-exec docker exec -it --workdir "/tmp/home${PWD}" ${CLI_NAME} /google-cloud-sdk/bin/gcloud "${@}"
+exec docker exec -it --workdir "/tmp/home${PWD}" ${CLI_NAME} /usr/bin/CLI_NAME "${@}"
 ```
