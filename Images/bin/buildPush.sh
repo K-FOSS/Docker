@@ -21,7 +21,7 @@ cd "${BASEDIR}/../Extras/Builder/"
 
 ./setup.sh
 docker-compose up -d --build
-docker-compose exec -w /workspace Docker docker buildx bake -f ./docker-compose.build.yml
+docker-compose exec -T -w /workspace Docker docker buildx bake -f ./docker-compose.build.yml
 
 
 # ${RUNNER} buildx bake -f ./docker-compose.build.yml
