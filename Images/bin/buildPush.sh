@@ -5,8 +5,7 @@ BASEDIR=$(dirname "$0")
 # DOCKER_IMAGE="$(${BUILDER})"
 # RUNNER="${BASEDIR}/runner.sh ${DOCKER_IMAGE}"
 
-PUSH_IMAGES="kristianfoss/programs-vault \
-  kristianfoss/programs-step \
+PUSH_IMAGES="kristianfoss/programs-step \
   kristianfoss/programs-keybase \
   kristianfjones/bin-installer \
   kristianfoss/builders-node \
@@ -15,8 +14,7 @@ PUSH_IMAGES="kristianfoss/programs-vault \
   kristianfoss/programs-gomtr \
   kristianfoss/programs-mtr \
   kristianfoss/programs-teleport \
-  kristianfoss/programs-openssh \
-  kristianfoss/programs-gcloud"
+  kristianfoss/programs-openssh"
 
 
 cd "${BASEDIR}/../Extras/Builder/"
