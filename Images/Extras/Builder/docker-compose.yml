@@ -8,6 +8,7 @@ volumes:
 services:
   DockerDaemon:
     image: kristianfoss/programs-docker:alpine-dockerd-lab
+    privileged: true
     build:
       context: ./Docker/
       target: dockerd
@@ -16,11 +17,11 @@ services:
     restart: unless-stopped
     volumes:
       - dockerSocket:/var/run
+      - /var/lib/docker/aufs/diff:/var/lib/docker/aufs/diff
 
   Docker:
-    image: kristianfoss/programs-docker:alpine-docker-lab
+    image: kristianfoss/lab/programs-docker:dockercli
     entrypoint: ['/bin/sh']
-    tty: true
     stdin_open: true
     # command: ['buildx', 'bake', '-f', './docker-compose.build.yml']
     working_dir: /workspace
@@ -31,4 +32,4 @@ services:
       target: docker
     volumes:
       - dockerSocket:/var/run
-      - /root/workspace/Images:/workspace
+      - ../../:/workspace

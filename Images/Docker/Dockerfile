@@ -27,6 +27,8 @@ FROM ${ALPINE} as prepareCLI
 ARG CLI_NAME
 ENV CLI_NAME=${CLI_NAME}
 
+RUN apk --no-cache add ca-certificates
+
 COPY --from=prepareUser /tmp/user /tmp/cli
 COPY --from=fetcher /tmp/docker/${CLI_NAME} /tmp/cli/usr/bin/
 
@@ -35,7 +37,19 @@ RUN cd /tmp/cli/usr/bin \
   && chmod +X /tmp/cli/usr/bin/cliLink
 
 
+
+RUN mkdir -p /tmp/cli/root/.docker/cli-plugins \
+  && wget -O /tmp/cli/root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64  \
+  && chmod +x /tmp/cli/root/.docker/cli-plugins/docker-buildx \
+  && mkdir -p /tmp/cli/root/.docker/buildx \
+  && chown -R 1000:1000 /tmp/cli/root/.docker/buildx
+
+
+
+
 FROM ${FINAL_BASE} as cli
+COPY ./config.json /root/.docker/config.json
+
 COPY --from=prepareCLI /tmp/cli /
 
 USER user

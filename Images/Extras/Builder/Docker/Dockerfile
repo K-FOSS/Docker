@@ -1,7 +1,7 @@
 ARG ALPINE='alpine:3.11'
 
 FROM ${ALPINE} as prepare
-RUN apk add --no-cache ack binutils
+RUN apk add --no-cache ack binutils ca-certificates
 
 COPY ./passwd ./shadow /tmp/dockerd/etc/
 
@@ -13,7 +13,11 @@ RUN export DOCKER_VERSION=$(wget -O - -q https://download.docker.com/linux/stati
 
 RUN strip /tmp/docker/* \
   && mkdir -p /tmp/dockerd/usr/bin \
-  && cp /tmp/docker/dockerd /tmp/docker/docker-init /tmp/docker/containerd /tmp/docker/containerd-shim /tmp/docker/ctr /tmp/docker/runc /tmp/dockerd/usr/bin/
+  && mkdir -p /tmp/dockerd/etc/ssl/certs \
+  && mkdir -p /tmp/docker/etc/ssl/certs \
+  && cp /tmp/docker/dockerd /tmp/docker/docker-init /tmp/docker/containerd /tmp/docker/containerd-shim /tmp/docker/ctr /tmp/docker/runc /tmp/dockerd/usr/bin/ \
+  && cp /etc/ssl/certs/ca-certificates.crt /tmp/dockerd/etc/ssl/certs/ca-certificates.crt \
+  && cp /etc/ssl/certs/ca-certificates.crt /tmp/docker/etc/ssl/certs/ca-certificates.crt
 
 
 

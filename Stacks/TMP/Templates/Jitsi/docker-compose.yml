@@ -2,7 +2,7 @@ version: '3.7'
 
 networks:
   publicWeb:
-  cabotInternal:
+  INSERT_HEREInternal:
 
 volumes:
   cabotDB:
@@ -48,65 +48,96 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - $HOME/.docker/config.json:/root/.docker/config.json:ro
 
-  # Cabot Monitoring and Alerting
-  cabotWeb:
-    image: cabotapp/cabot
+  jitsiWeb:
+    image: jitsi/web
     restart: unless-stopped
-    command: sh -c "cabot migrate && gunicorn cabot.wsgi:application -b 0.0.0.0:5000 --workers=5"
-    env_file: ENVs/Cabot.env
-    depends_on:
-      - cabotDB
-      - cabotRabbitMQ
-    networks:
-      - cabotInternal
-      - publicWeb
-    labels:
-      com.ouroboros.enable: 'true'
-
-  catbotWorker:
-    image: cabotapp/cabot
-    restart: unless-stopped
-    command: celery worker -A cabot
-    env_file: ENVs/Cabot.env
-    networks:
-      - cabotInternal
-    depends_on:
-      - cabotWeb
-      - cabotDB
-      - cabotRabbitMQ
-    labels:
-      com.ouroboros.enable: 'true'
-
-  catbotBeat:
-    image: cabotapp/cabot
-    restart: unless-stopped
-    command: celery beat -A cabot
-    env_file: ENVs/Cabot.env
-    networks:
-      - cabotInternal
-    depends_on:
-      - cabotWeb
-      - cabotDB
-      - cabotRabbitMQ
-    labels:
-      com.ouroboros.enable: 'true'
-
-  cabotDB:
-    image: postgres:9.6-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: 'trust'
+    env_file: ENVs/Jitsi.env
     volumes:
-      - cabotDBData:/var/lib/postgresql/data
+      - jitsiWebConfig:/config
     networks:
-      - cabotInternal
+      jitsiMeet:
+        aliases:
+          - meet.jitsi
+      publicWeb:
+    environment:
+      ENABLE_AUTH: '0'
+      ENABLE_GUESTS: '1'
+      ENABLE_LETSENCRYPT: '0'
+      ENABLE_HTTP_REDIRECT: '0'
+      ENABLE_TRANSCRIPTIONS: '0'
+      DISABLE_HTTPS: '1'
     labels:
       com.ouroboros.enable: 'true'
 
-  cabotRabbitMQ:
-    image: rabbitmq:3.6-alpine
+  jitsiEtherpad:
+    image: jitsi/etherpad
     restart: unless-stopped
     networks:
-      - cabotInternal
+      publicWeb:
+      jitsiMeet:
+        aliases:
+          - etherpad.meet.jitsi
+
+    # XMPP server
+  jitsiProsody:
+    image: jitsi/prosody
+    restart: unless-stopped
+    env_file: ENVs/Jitsi.env
+    expose:
+      - '5222'
+      - '5347'
+      - '5280'
+    volumes:
+      - jitsiProsodyConfig:/config
+    networks:
+      jitsiMeet:
+        aliases:
+          - xmpp.meet.jitsi
+    labels:
+      com.ouroboros.enable: 'true'
+
+  jitsiJicofo:
+    image: jitsi/jicofo
+    restart: unless-stopped
+    env_file: ENVs/Jitsi.env
+    volumes:
+      - jitsiJicofoConfig:/config
+    networks:
+      jitsiMeet:
+        aliases:
+          - jicofo
+    depends_on:
+      - jitsiProsody
+    labels:
+      com.ouroboros.enable: 'true'
+
+  jitsiJigasi:
+    image: jitsi/jigasi
+    restart: unless-stopped
+    env_file: ENVs/Jitsi.env
+    networks:
+      jitsiMeet:
+    ports:
+      - 20000-20050:20000-20050/udp
+    depends_on:
+      - jitsiProsody
+    labels:
+      com.ouroboros.enable: 'true'
+
+  jitsiJVB:
+    image: jitsi/jvb
+    restart: unless-stopped
+    env_file: ENVs/Jitsi.env
+    volumes:
+      - jitsiVideoBridgeConfig:/config
+    networks:
+      jitsiMeet:
+        aliases:
+          - jvb
+    ports:
+      - 10000:10000/udp
+      - 4443:4443
+    depends_on:
+      - jitsiProsody
     labels:
       com.ouroboros.enable: 'true'

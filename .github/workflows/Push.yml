@@ -1,0 +1,16 @@
+name: Push
+
+on: [push, pull_request]
+
+jobs:
+  Test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Images
+        run: ./bin/buildPush.sh
+        working-directory: ./Images
+        env:
+          USERNAME: kristianfjones
+          PASSWORD: ${{ secrets.DOCKER_HUB_TOKEN }}

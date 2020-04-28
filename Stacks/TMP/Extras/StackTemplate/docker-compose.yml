@@ -1,0 +1,49 @@
+version: '3.7'
+
+networks:
+  publicWeb:
+  INSERT_HEREInternal:
+
+volumes:
+  cabotDB:
+  tlsCertificates:
+
+services:
+  Web:
+    image: caddy/caddy:scratch
+    restart: unless-stopped
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
+    volumes:
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json
+      - tlsCertificates:/TLS:ro
+    ports:
+      - 80:8080
+      - 443:8443/tcp
+      - 443:8443/udp
+    networks:
+      - publicWeb
+    labels:
+      com.ouroboros.enable: 'true'
+      com.distributed-dns.web: 'true'
+
+  # Script that checks for updates to docker containers and recreates an identical container with new image if there is an update.
+  #
+  # I currently have it setup to only update containers with the docker tag of `com.ouroboros.enable: 'true'`
+  #
+  # Repo: https://github.com/pyouroboros/ouroboros
+  Ouroboros:
+    image: pyouroboros/ouroboros
+    restart: unless-stopped
+    container_name: ouroboros
+    hostname: ouroboros
+    env_file: ENVs/Ouroboros.env
+    environment:
+      CLEANUP: 'true'
+      LOG_LEVEL: 'error'
+      SELF_UPDATE: 'true'
+      LABEL_ENABLE: 'true'
+      LABELS_ONLY: 'true'
+      TZ: 'America/Winnipeg'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $HOME/.docker/config.json:/root/.docker/config.json:ro

@@ -8,6 +8,7 @@ ARG SCRIPT_NAME
 ARG SCRIPT_RAW_URL
 
 RUN apk add --no-cache ${PKGS} \
-  && wget -O /${SCRIPT_NAME} ${SCRIPT_RAW_URL}
+  && wget -O /script ${SCRIPT_RAW_URL} \
+  && chmod +x /script
 
-CMD /${SCRIPT_NAME}
+CMD /script

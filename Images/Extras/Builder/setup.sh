@@ -12,7 +12,7 @@ if [ ! "$(docker volume ls -q -f name=${VOLUME_NAME})" ]; then
     exit 1
   else
     echo "Successfully created socket volume"
-    docker run -it --rm --workdir /tmp/workdir -v ${VOLUME_NAME}:/tmp/workdir/run ${ALPINE} chown -R 0:1000 /tmp/workdir
+    docker run -it --rm --workdir /tmp/workdir -v ${VOLUME_NAME}:/tmp/workdir/run ${ALPINE} chown -R 0:0 /tmp/workdir
     exit 0
   fi
 else
