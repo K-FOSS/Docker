@@ -278,6 +278,21 @@ services:
         GIT_BRANCH: master
     image: kristianfoss/programs-teleport:alpine-tsh
 
+  cloudflaredAlpine:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        FINAL_BASE: 'alpine:3.11'
+        BUILD_IMAGE: 'golang:1.13.7-alpine'
+        BUILD_PKGS: 'zip'
+        BUILD_PATH: /go/src/github.com/cloudflare/cloudflared
+        BUILD_CMD: 'make cloudflared'
+        POST_BUILD_CMD: 'mv /go/src/github.com/cloudflare/cloudflared/cloudflared /tmp/cloudflared/usr/bin/cloudflared'
+        BINARY_NAME: cloudflared
+        GIT_REPO: https://github.com/cloudflare/cloudflared.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-cloudflared:alpine    
+
   # SAMBA:
   #   build:
   #     <<: *gitStaticBuilder
