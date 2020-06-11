@@ -8,16 +8,28 @@ I want to setup a system so that I can publish to multiple registrys and the ima
 
 ## Images
 
-### Programs
+### Images/Docker
 
-#### Programs/Git
+This is a Scratch based static Docker daemon and CLI image.
 
-GIT CLI `FROM scratch` base image.
+## Stacks
 
-#### Programs/NodeJS
+### Stacks
 
-NodeJS CLI `FROM scratch` base image.
+#### Docker Compose
 
-#### Programs/Mono
+Docker compose Stack templates
 
-Mono CLI `FROM scratch` base image.
+| _Application_                            | _Notes_                                           | _Project_ |     |     |
+| ---------------------------------------- | ------------------------------------------------- | --------- | --- | --- |
+| [Jitsi Meet](./Stacks/Compose/Jitsi)     | Jitsi Meet server                                 |           |     |     |
+| [Netbox](./Stacks/Compose/Netbox)        | Netbox IPAM                                       |           |     |     |
+| [Cabot](./Stacks/Compose/Cabot)          | Cabot Monitoring                                  |           |     |     |
+| [Teleport](./Stacks/Compose/TeleportAIO) | Teleport Single Container no HA/CA nor redundancy |           |     |     |
+|                                          |                                                   |           |     |     |
+|                                          |                                                   |           |     |     |
+|                                          |                                                   |           |     |     |
+
+#### Docker Swarm Stacks
+
+See [./Stacks/Swarm](./Stacks/Swarm)

@@ -7,13 +7,13 @@
       "http_port": 8080,
       "https_port": 8443,
       "servers": {
-        "kristianjones.dev": {
+        "example.com": {
           "listen": [":8443"],
           "routes": [
             {
               "match": [
                 {
-                  "host": ["*.kristianjones.dev"]
+                  "host": ["*.example.com"]
                 }
               ],
               "handle": [
@@ -23,7 +23,7 @@
                     {
                       "match": [
                         {
-                          "host": ["meet.kristianjones.dev"]
+                          "host": ["meet.example.com"]
                         }
                       ],
                       "handle": [

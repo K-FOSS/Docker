@@ -1,0 +1,32 @@
+version: '3.8'
+
+volumes:
+  databaseData:
+  caddyData:
+
+networks:
+  publicWeb:
+
+services:
+  Web:
+    image: caddy:alpine
+    restart: unless-stopped
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
+    volumes:
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json
+      - caddyData:/data
+    networks:
+      - publicWeb
+    ports:
+      - 80:80
+      - 443:443/tcp
+      - 443:443/udp
+
+  speedtest:
+    image: adolfintel/speedtest
+    env_file: ENVs/Speedtest.env
+    environment:
+      MODE: 'standalone'
+      TELEMETRY: 'true'
+    networks:
+      - publicWeb
