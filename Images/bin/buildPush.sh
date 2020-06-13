@@ -15,7 +15,8 @@ PUSH_IMAGES="kristianfoss/programs-step \
   kristianfoss/programs-mtr \
   kristianfoss/programs-teleport \
   kristianfoss/programs-openssh \
-  kristianfoss/programs-cloudflared"
+  kristianfoss/programs-cloudflared \
+  kristianfoss/programs-etcd"
 
 
 cd "${BASEDIR}/../Extras/Builder/"

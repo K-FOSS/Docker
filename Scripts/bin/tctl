@@ -1,0 +1,7 @@
+CLI_IMAGE="kristianfoss/programs-teleport:alpine-tctl"
+
+CLI_NAME="tctl-cli"
+
+ensure-docker-cli "${CLI_NAME}" "${CLI_IMAGE}" "-v ${HOME}:/tmp/home${HOME}  -e HOME=/tmp/home${HOME}"
+
+exec docker exec -it --workdir "/tmp/home${PWD}" ${CLI_NAME} /usr/bin/tctl "${@}"

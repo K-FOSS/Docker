@@ -21,6 +21,7 @@ RUN apk add --no-cache ${BUILD_PKG_ARGS} build-base autoconf automake ${BUILD_PK
 RUN mkdir -p /tmp/src \
   && ${SRC_CMD} | ${SRC_EXTRACT}
 
+ENV GO111MODULE=on
 RUN cd /tmp/src \
   && ${BUILD_SETUP} \
   && ${BUILD_CMD}

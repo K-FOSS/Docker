@@ -108,6 +108,20 @@ services:
         GIT_BRANCH: master
     image: kristianfoss/programs-pgweb:scratch
 
+  goBuilderPulumi:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_PKGS: 'bash'
+        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_PATH: /go/src/pulumi
+        BUILD_SETUP: 'make dist'
+        BUILD_CMD: 'go build ./pkg'
+        BINARY_NAME: pulumi
+        GIT_REPO: https://github.com/pulumi/pulumi.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-pulumi:scratch
+
   goBuilderMTR:
     build:
       <<: *gitStaticBuilder
@@ -121,6 +135,20 @@ services:
         BUILD_PATH: /go/src/mtr
         BUILD_CMD: 'go build -trimpath -tags netgo -o /tmp/mtr/usr/bin/mtr'
     image: kristianfoss/programs-gomtr:scratch
+
+  goBuilderLibreSpeed:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        BUILD_IMAGE: 'golang:1.14.2-alpine3.11'
+        BINARY_NAME: speedtest
+        GIT_REPO: https://github.com/librespeed/speedtest.git
+        GIT_BRANCH: go
+        BUILD_PATH: /go/src/librespeed
+        BUILD_CMD: go build -trimpath -o /tmp/speedtest/usr/bin/speedtest main.go
+        POST_BUILD_CMD: 'cp -R /go/src/librespeed/assets /tmp/speedtest/assets'
+        FINAL_BASE: 'alpine:3.11'
+    image: kristianfoss/programs-librespeed:scratch
 
   wgTools:
     build:
@@ -263,6 +291,21 @@ services:
         GIT_BRANCH: master
     image: kristianfoss/programs-teleport:alpine-tctl
 
+  etcdAlpine:
+    build:
+      <<: *gitStaticBuilder
+      args:
+        FINAL_BASE: 'alpine:3.12'
+        BUILD_IMAGE: 'golang:1.14.4-alpine3.12'
+        BUILD_PKGS: 'zip bash'
+        BUILD_PATH: /go/src/github.com/etcd-io/etcd
+        BUILD_CMD: './build'
+        POST_BUILD_CMD: 'mv /go/src/github.com/etcd-io/etcd/bin/* /tmp/etcd/usr/bin/'
+        BINARY_NAME: etcd
+        GIT_REPO: https://github.com/etcd-io/etcd.git
+        GIT_BRANCH: master
+    image: kristianfoss/programs-etcd:alpine-etcd
+
   teleportTSHAlpine:
     build:
       <<: *gitStaticBuilder
@@ -370,6 +413,13 @@ services:
   #   build:
   #     context: ./Mono
   #   image: kristianfoss/programs-mono:scratch
+
+  # sonarrScratch:
+  #   build:
+  #     context: ./TMP/Sonarr
+  #   depends_on: 
+  #     - monoScratch
+  #   image: kristianfoss/programs-sonarr:scratch
 
   sshagentScratch:
     build:
