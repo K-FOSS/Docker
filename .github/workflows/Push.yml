@@ -2,9 +2,11 @@ name: Push
 
 on:
   push:
-  schedule:
-    # * is a special character in YAML so you have to quote this string
-    - cron: '* 23 * * *'
+    branches:
+      - master
+  # schedule:
+  #   # * is a special character in YAML so you have to quote this string
+  #   - cron: '* 23 * * *'
 
 jobs:
   Test:

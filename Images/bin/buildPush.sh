@@ -8,15 +8,17 @@ BASEDIR=$(dirname "$0")
 PUSH_IMAGES="kristianfoss/programs-step \
   kristianfoss/programs-keybase \
   kristianfjones/bin-installer \
+  kristianfoss/programs-pgweb \
+  kristianfoss/programs-librespeed \
   kristianfoss/builders-node \
   kristianfoss/programs-git \
-  kristianfoss/programs-caddy \
-  kristianfoss/programs-gomtr \
-  kristianfoss/programs-mtr \
   kristianfoss/programs-teleport \
   kristianfoss/programs-openssh \
+  kristianfoss/programs-rootlesskit \
   kristianfoss/programs-cloudflared \
-  kristianfoss/programs-etcd"
+  kristianfoss/programs-etcd \
+  kristianfoss/source-iptables \
+  kristianfoss/source-iproute2"
 
 
 cd "${BASEDIR}/../Extras/Builder/"

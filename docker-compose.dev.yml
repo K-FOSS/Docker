@@ -1,0 +1,9 @@
+version: '3.8'
+
+volumes:
+  dockerSocket:
+
+services: 
+  DockerD:
+    image: kristianfoss/programs-docker:scratch-dockerd
+    

@@ -1,0 +1,9 @@
+{
+  "name": "@K-FOSS/Docker Development",
+  "composeFile": "./docker-compose.dev.yml",
+  "service": "",
+  "extensions": [
+    "ms-azuretools.vscode-docker",
+    "esbenp.prettier-vscode"
+  ]
+}
