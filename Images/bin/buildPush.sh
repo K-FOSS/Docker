@@ -19,7 +19,8 @@ PUSH_IMAGES="kristianfoss/programs-step \
   kristianfoss/programs-cloudflared \
   kristianfoss/programs-etcd \
   kristianfoss/source-iptables \
-  kristianfoss/source-iproute2"
+  kristianfoss/source-iproute2 \
+  kristianfoss/programs-cloudc2"
 
 
 cd "${BASEDIR}/../Extras/Builder/"

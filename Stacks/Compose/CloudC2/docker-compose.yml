@@ -1,0 +1,30 @@
+version: '3.8'
+
+volumes:
+  CloudC2Data:
+
+networks: 
+  publicWeb:
+
+services: 
+  Web:
+    image: caddy/caddy:scratch
+    restart: unless-stopped
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
+    volumes:
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json
+    networks: 
+      - publicWeb
+    ports:
+      - 8080:8080
+
+  CloudC2:
+    image: kristianfoss/programs-cloudc2:alpine
+    restart: unless-stopped
+    command: ['-hostname=localhost.example.com', '-db=/data/c2.db', '-reverseProxy', '-reverseProxyPort=8080']
+    volumes: 
+      - CloudC2Data:/data
+    networks: 
+      - publicWeb
+    ports: 
+      - 2022:2022

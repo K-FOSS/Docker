@@ -1,4 +1,4 @@
-ARG FINAL_BASE='kristianfoss/programs-rootlesskit:rootless-alpine'
+ARG FINAL_BASE='scratch'
 ARG BUILD_IMAGE='alpine:3.12'
 ARG BINARY_NAME='binary-out'
 ARG BUILD_PKGS=''

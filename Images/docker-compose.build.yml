@@ -683,6 +683,37 @@ services:
         FINAL_BASE: kristianfoss/programs-rootlesskit:rootless-scratch
     image: kristianfoss/programs-docker:dockerd-rootless-scratch
 
+
+  #
+  # CloudC2
+  #
+  # Website: https://shop.hak5.org/products/c2
+  # Docs: https://docs.hak5.org/hc/en-us/categories/360001177114-Cloud-C2
+  #
+  
+  # CloudC2 with a `FROM alpine` final base image
+  cloudC2Alpine:
+    build:
+      <<: *staticBuilder
+      args:
+        FINAL_BASE: alpine
+        BUILD_IMAGE: alpine
+        BUILD_PKGS: curl
+        BUILD_PATH: /src
+        FETCH_CMD: |
+          mkdir -p /src
+          cd /src/ && curl -J -sSL https://c2.hak5.org/download/community | unzip -
+        BUILD_CMD: |
+          ls -lah /src
+          mv /src/c2_community-linux-64 /tmp/cloud_c2/usr/bin/cloud_c2
+        POST_BUILD_CMD: |
+          chmod +x /tmp/cloud_c2/usr/bin/cloud_c2
+          mkdir -p /tmp/cloud_c2/lib64/
+          ln -s /lib/ld-musl-x86_64.so.1 /tmp/cloud_c2/lib64/ld-linux-x86-64.so.2
+        BINARY_NAME: cloud_c2
+    image: kristianfoss/programs-cloudc2:alpine
+
+
   ##
   ## SOURCE Images
   ## 
@@ -724,8 +755,7 @@ services:
         POST_BUILD_CMD: |
           mkdir -p /tmp/ip/etc
           echo "root:x:0:0:root:/root:/usr/sbin/nologin" > /tmp/ip/etc/passwd
-          ls -lah /tmp/ip/usr/bin
-          ldd /tmp/ip/usr/bin/ip
+          mv /tmp/ip/sbin/* /tmp/ip/usr/bin/
         BINARY_NAME: ip
         FETCH_CMD: |
           mkdir -p /tmp/src && cd /tmp/src/ && git clone -b master git://git.kernel.org/pub/scm/network/iproute2/iproute2.git
