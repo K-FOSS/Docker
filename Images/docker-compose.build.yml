@@ -212,7 +212,7 @@ services:
         FINAL_BASE: alpine
         USER: user
         BUILD_IMAGE: alpine
-        BUILD_PKGS: openssl-dev openssl-libs-static curl-dev curl-static gettext-libs gettext-static
+        BUILD_PKGS: openssl-dev openssl-libs-static curl-dev curl-static gettext-libs gettext-static linux-headers
         BUILD_PATH: /src/git
         FETCH_CMD: |
           mkdir -p /src
@@ -268,8 +268,7 @@ services:
     build:
       <<: *gitStaticBuilder
       args:
-        BUILD_IMAGE: 'alpine'
-        FINAL_BASE: 'alpine'
+        BUILD_IMAGE: alpine
         BUILD_PKGS: 'build-base linux-headers'
         BINARY_NAME: wg
         GIT_REPO: https://git.zx2c4.com/wireguard-tools
@@ -278,6 +277,7 @@ services:
         BUILD_CMD: 'make -C src'
         POST_BUILD_CMD: 'mv /tmp/src/wireguard-tools/src/wg /tmp/wg/usr/bin/'
         POST_CMD: 'ls -lah /usr/bin'
+        FINAL_BASE: 'alpine'
     environment:
       WITH_WGQUICK: 'yes'
     image: kristianfoss/programs-wg:alpine
@@ -290,21 +290,21 @@ services:
   #
   # Repo: https://git.zx2c4.com/wireguard-go
   #
-  wgGo:
-    build:
-      <<: *gitStaticBuilder
-      args:
-        BUILD_IMAGE: 'golang:1.13.6-alpine'
-        FINAL_BASE: 'alpine'
-        FINAL_CMD: 'apk add --no-cache iptables'
-        BUILD_PKGS: libcap
-        POST_BUILD_CMD: 'setcap cap_net_raw+ep /tmp/wireguard-go/usr/bin/wireguard-go'
-        BINARY_NAME: wireguard-go
-        GIT_REPO: https://git.zx2c4.com/wireguard-go
-        GIT_BRANCH: master
-        BUILD_PATH: /go/src/wireguard-go
-        BUILD_CMD: 'go build -trimpath -tags netgo -o /tmp/wireguard-go/usr/bin/wireguard-go'
-    image: kristianfoss/programs-wireguard-go:alpine
+  # wgGo:
+  #   build:
+  #     <<: *gitStaticBuilder
+  #     args:
+  #       BUILD_IMAGE: golang:1.13.6-alpine
+  #       FINAL_BASE: alpine
+  #       FINAL_CMD: 'apk add --no-cache iptables'
+  #       BUILD_PKGS: libcap
+  #       POST_BUILD_CMD: 'setcap cap_net_raw+ep /tmp/wireguard-go/usr/bin/wireguard-go'
+  #       BINARY_NAME: wireguard-go
+  #       GIT_REPO: https://git.zx2c4.com/wireguard-go
+  #       GIT_BRANCH: master
+  #       BUILD_PATH: /go/src/wireguard-go
+  #       BUILD_CMD: 'go build -trimpath -tags netgo -o /tmp/wireguard-go/usr/bin/wireguard-go'
+  #   image: kristianfoss/programs-wireguard-go:alpine
 
 
   #
@@ -344,11 +344,12 @@ services:
       <<: *staticBuilder
       args:
         BUILD_IMAGE: golang:alpine
-        BUILD_PATH: /go/src/cli
+        BUILD_PATH: /go/src/github.com/smallstep/cli
         FETCH_CMD: |
-          cd /go/src && git clone -b master https://github.com/smallstep/cli.git
+          mkdir -p /go/src/github.com/smallstep
+          cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/cli.git
         BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/cli/bin/step /tmp/step/usr/bin/step
+        POST_BUILD_CMD: mv /go/src/github.com/smallstep/bin/step /tmp/step/usr/bin/step
         BINARY_NAME: step
         FINAL_BASE: scratch
     image: kristianfoss/programs-step:scratch-cli
@@ -359,11 +360,12 @@ services:
       <<: *staticBuilder
       args:
         BUILD_IMAGE: golang:alpine
-        BUILD_PATH: /go/src/step
+        BUILD_PATH: /go/src/github.com/smallstep/cli
         FETCH_CMD: |
-          cd /go/src && git clone -b master https://github.com/smallstep/cli.git
+          mkdir -p /go/src/github.com/smallstep
+          cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/cli.git
         BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/step/bin/step /tmp/step/usr/bin/step
+        POST_BUILD_CMD: mv /go/src/github.com/smallstep/bin/step /tmp/step/usr/bin/step
         BINARY_NAME: step
         FINAL_BASE: alpine
     image: kristianfoss/programs-step:alpine-cli
@@ -380,12 +382,13 @@ services:
     build:
       <<: *staticBuilder
       args:
-
         BUILD_IMAGE: golang:alpine
-        BUILD_PATH: /go/src/step-ca
-        FETCH_CMD: git clone -b master https://github.com/smallstep/certificates.git
+        BUILD_PATH: /go/src/github.com/smallstep/certificates
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/smallstep
+          cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/certificates.git
         BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/step-ca/bin/step-ca /tmp/step-ca/usr/bin/step-ca
+        POST_BUILD_CMD: mv /go/src/github.com/smallstep/certificates/bin/step-ca /tmp/step-ca/usr/bin/step-ca
         BINARY_NAME: step-ca
     image: kristianfoss/programs-step:scratch-certificates
 
@@ -395,11 +398,13 @@ services:
       <<: *staticBuilder
       args:
         BUILD_IMAGE: golang:alpine
-        BUILD_PATH: /go/src/step-ca
+        BUILD_PATH: /go/src/github.com/smallstep/certificates
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/smallstep
+          cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/certificates.git
         BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/step-ca/bin/step-ca /tmp/step-ca/usr/bin/step-ca
+        POST_BUILD_CMD: mv /go/src/github.com/smallstep/certificates/bin/step-ca /tmp/step-ca/usr/bin/step-ca
         BINARY_NAME: step-ca
-        FETCH_CMD: git clone -b master https://github.com/smallstep/certificates.git
         FINAL_BASE: alpine
     image: kristianfoss/programs-step:alpine-certificates
 
@@ -435,8 +440,8 @@ services:
     build:
       <<: *gitStaticBuilder
       args:
-        FINAL_BASE: 'alpine'
-        BUILD_IMAGE: 'golang:1.13.7-alpine'
+        FINAL_BASE: alpine
+        BUILD_IMAGE: golang:alpine
         BUILD_PKGS: 'zip'
         BUILD_PATH: /go/src/github.com/gravitational/teleport
         BUILD_CMD: 'make full'
@@ -451,15 +456,17 @@ services:
     build:
       <<: *gitStaticBuilder
       args:
-        FINAL_BASE: alpine
-        BUILD_IMAGE: golang:1.13.7-alpine
+        BUILD_IMAGE: golang:alpine
         BUILD_PKGS: zip
         BUILD_PATH: /go/src/github.com/gravitational/teleport
-        BUILD_CMD: make full
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/gravitational
+          cd /go/src/github.com/gravitational && git clone -b master https://github.com/gravitational/teleport.git
+        BUILD_CMD: |
+          make tctl
         POST_BUILD_CMD: mv /go/src/github.com/gravitational/teleport/build/tctl /tmp/tctl/usr/bin/tctl
-        BINARY_NAME: tctl
-        GIT_REPO: https://github.com/gravitational/teleport.git
-        GIT_BRANCH: master
+        BINARY_NAME: tsh
+        FINAL_BASE: alpine
     image: kristianfoss/programs-teleport:alpine-tctl
 
   # Teleport TSH CLI with a `FROM alpine` final base image
@@ -467,16 +474,19 @@ services:
     build:
       <<: *staticBuilder
       args:
-        FINAL_BASE: alpine
-        BUILD_IMAGE: golang:1.13.7-alpine
+        BUILD_IMAGE: golang:alpine
         BUILD_PKGS: zip
         BUILD_PATH: /go/src/github.com/gravitational/teleport
-        BUILD_CMD: 'make full'
-        POST_BUILD_CMD: 'mv /go/src/github.com/gravitational/teleport/build/tsh /tmp/tsh/usr/bin/tsh'
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/gravitational
+          cd /go/src/github.com/gravitational && git clone -b master https://github.com/gravitational/teleport.git
+        BUILD_CMD: |
+          make tsh
+        POST_BUILD_CMD: mv /go/src/github.com/gravitational/teleport/build/tsh /tmp/tsh/usr/bin/tsh
         BINARY_NAME: tsh
-        GIT_REPO: https://github.com/gravitational/teleport.git
-        GIT_BRANCH: master
+        FINAL_BASE: alpine
     image: kristianfoss/programs-teleport:alpine-tsh
+
 
   #
   # ETCD
@@ -490,7 +500,7 @@ services:
       args:
         FINAL_BASE: alpine
         BUILD_IMAGE: golang:alpine
-        BUILD_PKGS: ''
+        BUILD_PKGS: bash
         BUILD_PATH: /go/src/github.com/etcd-io/etcd
         FETCH_CMD: |
           mkdir -p /go/src/github.com/etcd-io/
@@ -519,7 +529,6 @@ services:
         FETCH_CMD: |
           mkdir -p /go/src/github.com/cloudflare/
           cd /go/src/github.com/cloudflare/ && git clone -b master https://github.com/cloudflare/cloudflared.git
-          wget -O - https://github.com/shadow-maint/shadow/releases/download/4.8.1/shadow-4.8.1.tar.gz | tar xz -C /src/shadow --strip-components=1
         BUILD_CMD: |
           make cloudflared
         POST_BUILD_CMD: |
@@ -539,7 +548,6 @@ services:
         FETCH_CMD: |
           mkdir -p /go/src/github.com/cloudflare/
           cd /go/src/github.com/cloudflare/ && git clone -b master https://github.com/cloudflare/cloudflared.git
-          wget -O - https://github.com/shadow-maint/shadow/releases/download/4.8.1/shadow-4.8.1.tar.gz | tar xz -C /src/shadow --strip-components=1
         BUILD_CMD: |
           make cloudflared
         POST_BUILD_CMD: |
@@ -650,6 +658,7 @@ services:
           cd /go/src/github.com/rootless-containers && git clone -b master https://github.com/rootless-containers/rootlesskit.git
     image: kristianfoss/programs-rootlesskit:rootless-scratch
 
+
   #
   # Docker
   #
@@ -679,23 +688,23 @@ services:
   ## 
   ##
 
-  iptablesSourceScratch:
-    build:
-      <<: *staticBuilder
-      args:
-        FINAL_BASE: scratch
-        USER: user
-        BUILD_IMAGE: alpine
-        BUILD_PKGS: ack binutils
-        BUILD_PATH: /tmp/src/iptables
-        BUILD_CMD: make all
-        POST_BUILD_CMD: 'mv /go/src/github.com/rootless-containers/rootlesskit/bin/* /tmp/rootlesskit/usr/bin/'
-        POST_CMD: |
-          echo 'test'
-        BINARY_NAME: rootlesskit
-        FETCH_CMD: |
-          git clone -b master https://github.com/rootless-containers/rootlesskit.git
-    image: kristianfoss/source-iptables:scratch
+  # iptablesSourceScratch:
+  #   build:
+  #     <<: *staticBuilder
+  #     args:
+  #       FINAL_BASE: scratch
+  #       USER: user
+  #       BUILD_IMAGE: alpine
+  #       BUILD_PKGS: ack binutils
+  #       BUILD_PATH: /tmp/src/iptables
+  #       BUILD_CMD: make all
+  #       POST_BUILD_CMD: 'mv /go/src/github.com/rootless-containers/rootlesskit/bin/* /tmp/rootlesskit/usr/bin/'
+  #       POST_CMD: |
+  #         echo 'test'
+  #       BINARY_NAME: rootlesskit
+  #       FETCH_CMD: |
+  #         git clone -b master https://github.com/rootless-containers/rootlesskit.git
+  #   image: kristianfoss/source-iptables:scratch
 
 
 
@@ -764,6 +773,7 @@ services:
       args:
         PKG_ARGS: '--repository http://dl-cdn.alpinelinux.org/alpine/edge/testing'
         PKGS: 'keybase-client gnupg'
+
 
   sshScratch:
     build:

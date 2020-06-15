@@ -1,5 +1,5 @@
-ARG ALPINE='alpine:3.11'
-ARG NODE="node:alpine3.11"
+ARG ALPINE='alpine'
+ARG NODE='node:alpine'
 
 FROM ${NODE} as builder
 ONBUILD ARG BASE_SRC_PATH='.'
