@@ -50,6 +50,8 @@ RUN mkdir -p /tmp/user/etc \
   && echo 'user:x:1000:1000:Linux User,,,:/home/user:/usr/sbin/nologin' > /tmp/user/etc/passwd \
   && mkdir -p /tmp/user/home/user/.ssh \
   && mkdir -p /tmp/user/home/user/.local/share/docker \
+  && mkdir -p /tmp/user/home/user/.docker \
+  && echo '{ "experimental": "enabled" }' >> /tmp/user/home/user/.docker/config.json \
   && chown -R 1000:1000 /tmp/user/home/user
 
 

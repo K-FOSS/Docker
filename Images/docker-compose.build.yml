@@ -444,7 +444,7 @@ services:
         BUILD_IMAGE: golang:1.14.4-alpine3.12
         BUILD_PKGS: libc-dev shadow-uidmap
         BUILD_PATH: /go/src/github.com/rootless-containers/rootlesskit
-        BUILD_CMD: make all
+        BUILD_CMD: make
         POST_BUILD_CMD: 'mv /go/src/github.com/rootless-containers/rootlesskit/bin/* /tmp/rootlesskit/usr/bin/'
         POST_CMD: |
           echo "root:x:0:0:root:/root:/usr/sbin/nologin" > /tmp/rootlesskit/etc/passwd
@@ -455,7 +455,10 @@ services:
           echo 'user:100000:65536' >> /tmp/rootlesskit/etc/subgid
         BINARY_NAME: rootlesskit
         FETCH_CMD: |
-          git clone -b master https://github.com/rootless-containers/rootlesskit.git
+          mkdir -p /go/src/github.com/rootless-containers
+          cd /go/src/github.com/rootless-containers 
+          ls -lah ./
+          cd /go/src/github.com/rootless-containers && git clone -b master https://github.com/rootless-containers/rootlesskit.git
     image: kristianfoss/programs-rootlesskit:rootless-alpine
 
   ##
@@ -495,11 +498,11 @@ services:
         BUILD_PATH: /tmp/src/iproute2
         BUILD_CMD: |
           make
+          make -j1 DESTDIR="/tmp/ip" install
         POST_BUILD_CMD: |
           mkdir -p /tmp/ip/etc
           echo "root:x:0:0:root:/root:/usr/sbin/nologin" > /tmp/ip/etc/passwd
-          ls -lah /tmp/src/iproute2/ip
-          mv /tmp/src/iproute2/ip/ip /tmp/ip/usr/bin/
+          ls -lah /tmp/ip/usr/bin
           ldd /tmp/ip/usr/bin/ip
         BINARY_NAME: ip
         FETCH_CMD: |

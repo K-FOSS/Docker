@@ -1,0 +1,21 @@
+version: '3.8'
+
+volumes: 
+  dockerSocket:
+    
+services: 
+  DockerD:
+    image: kristianfoss/programs-docker:dockerd-rootless-alpine
+    restart: unless-stopped
+
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    volumes: 
+      - dockerSocket:/run/user/1000
+
+  Docker:
+    image: kristianfoss/programs-docker:scratch-docker
+    command: ['run', '-it', 'hello-world']
+    volumes: 
+      - dockerSocket:/var/run
