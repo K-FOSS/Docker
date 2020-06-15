@@ -1,4 +1,4 @@
-ARG FINAL_BASE='kristianfoss/programs-rootlesskit:rootless-alpine'
+ARG FINAL_BASE='kristianfoss/programs-rootlesskit:rootless-scratch'
 ARG ALPINE='alpine'
 ARG CLI_NAME='docker'
 
@@ -14,8 +14,7 @@ RUN export DOCKER_VERSION=$(wget -O - -q https://download.docker.com/linux/stati
   && wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz | tar xz -C /tmp/docker --strip-components=1 \
   && wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-rootless-extras-${DOCKER_VERSION}.tgz | tar xz -C /tmp/docker --strip-components=1
 
-
-
+RUN ls -lah /tmp/docker/*
 
 FROM ${ALPINE} as iptablesBuild
 RUN apk add --no-cache ack binutils
@@ -52,7 +51,7 @@ RUN mkdir -p /tmp/user/etc \
   && mkdir -p /tmp/user/home/user/.local/share/docker \
   && mkdir -p /tmp/user/home/user/.docker \
   && echo '{ "experimental": "enabled" }' >> /tmp/user/home/user/.docker/config.json \
-  && chown -R 1000:1000 /tmp/user/home/user
+  && chown -R 1000:1000 /tmp/user/home/user 
 
 
 
@@ -61,13 +60,14 @@ FROM ${ALPINE} as prepareCLI
 ARG CLI_NAME
 ENV CLI_NAME=${CLI_NAME}
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates binutils
 
 COPY --from=prepareUser /tmp/user /tmp/cli
 
-COPY --from=fetcher /tmp/docker/* /tmp/cli/usr/bin/
+COPY --from=fetcher /tmp/docker/dockerd /tmp/docker/containerd /tmp/docker/runc /tmp/docker/docker-proxy /tmp/docker/containerd-shim /tmp/docker/vpnkit  /tmp/cli/usr/bin/
 COPY --from=iptablesBuild /tmp/src/out/usr/sbin/iptables /tmp/cli/usr/bin/
 COPY --from=kristianfoss/source-iproute2:scratch /usr/bin/ip /tmp/cli/usr/bin/ip
+COPY --from=kristianfoss/programs-rootlesskit:rootless-scratch /usr/bin/newuidmap /usr/bin/newgidmap /usr/bin/
 
 RUN cd /tmp/cli/usr/bin \
   && ln -s ./${CLI_NAME} ./cliLink \
@@ -75,9 +75,11 @@ RUN cd /tmp/cli/usr/bin \
   && mkdir -p /tmp/cli/run/user \
   && chmod 1777 /tmp/cli/run/user \
   && mkdir -p /tmp/cli/run/docker \
-  && chmod 1777 /tmp/cli/run/docker
+  && chmod 1777 /tmp/cli/run/docker \
+  && strip /tmp/cli/usr/bin/*
 
-
+RUN mkdir -p /tmp/cli/tmp \
+  && chmod 777 /tmp/cli/tmp
 
 
 FROM ${FINAL_BASE} as cli

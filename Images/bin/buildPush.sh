@@ -6,6 +6,7 @@ BASEDIR=$(dirname "$0")
 # RUNNER="${BASEDIR}/runner.sh ${DOCKER_IMAGE}"
 
 PUSH_IMAGES="kristianfoss/programs-step \
+  kristianfoss/programs-gomtr \
   kristianfoss/programs-keybase \
   kristianfjones/bin-installer \
   kristianfoss/programs-pgweb \

@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.8'
 
 x-baseBuilder: &baseBuilder
   context: ./Builders
@@ -23,52 +23,55 @@ x-simpleAlpineBuilder: &simpleAlpineBuilder
   <<: *baseBuilder
   dockerfile: SimpleAlpine.Dockerfile
 
+
 x-advancedAlpineBuilder: &advancedAlpineBuilder
   context: ./Builders/AdvancedBuilder
+
 
 x-generalAlpineBuilder: &generalAlpineBuilder
   context: ./Builders/
   dockerfile: GeneralAlpine.Dockerfile
 
+
 x-gitStaticBuilder: &gitStaticBuilder
   context: ./Builders/
   dockerfile: GitStatic.Dockerfile
+
 
 x-staticBuilder: &staticBuilder
   context: ./Builders/
   dockerfile: StaticBuilder.Dockerfile
 
+
 x-scriptBuilder: &scriptBuilder
   context: ./Builders
   dockerfile: ScriptRunner.Dockerfile
+
 
 x-dockerCLIBuilder: &dockerCLIBuilder
   context: ./Docker
   target: cli
 
+
 x-opensshBuilder: &opensshBuilder
   context: ./OpenSSH
   target: cli
+
 
 x-sshBuilder: &sshBuilder
   context: ./OpenSSH
   target: cli
   dockerfile: Dockerfile.Oasis
 
-services:
-  gitAlpine:
-    image: kristianfoss/programs-git:alpine-cli
-    build:
-      <<: *simpleAlpineBuilder
-      args:
-        PKGS: 'git'
 
+services:
   nodeBuilderImageBuild:
     build:
       context: ./Builders
       dockerfile: Node.dockerfile
       target: builder
     image: kristianfoss/builders-node:build
+
 
   nodeBuilderImageFetcher:
     build:
@@ -129,6 +132,7 @@ services:
         BINARY_NAME: pgweb
     image: kristianfoss/programs-pgweb:scratch
 
+
   #
   # Pulumi WIP
   #
@@ -136,38 +140,99 @@ services:
   # GitHub: https://github.com/pulumi/pulumi
   # Docs: https://www.pulumi.com/docs/
   #
-  goBuilderPulumi:
-    build:
-      <<: *gitStaticBuilder
-      args:
-        BUILD_PKGS: 'bash'
-        BUILD_IMAGE: 'golang:1.13.6-alpine'
-        BUILD_PATH: /go/src/pulumi
-        BUILD_SETUP: 'make dist'
-        BUILD_CMD: 'go build ./pkg'
-        BINARY_NAME: pulumi
-        GIT_REPO: https://github.com/pulumi/pulumi.git
-        GIT_BRANCH: master
-    image: kristianfoss/programs-pulumi:scratch
+
+  # goBuilderPulumi:
+  #   build:
+  #     <<: *gitStaticBuilder
+  #     args:
+  #       BUILD_PKGS: 'bash'
+  #       BUILD_IMAGE: 'golang:1.13.6-alpine'
+  #       BUILD_PATH: /go/src/pulumi
+  #       BUILD_SETUP: 'make dist'
+  #       BUILD_CMD: 'go build ./pkg'
+  #       BINARY_NAME: pulumi
+  #       GIT_REPO: https://github.com/pulumi/pulumi.git
+  #       GIT_BRANCH: master
+  #   image: kristianfoss/programs-pulumi:scratch
+
 
   #
   # Go MTR
   #
   # GitHub: https://github.com/tonobo/mtr
   #
-  goBuilderMTR:
+
+  # goMTR with a `FROM alpine` final base image
+  goMTRAlpine:
     build:
-      <<: *gitStaticBuilder
+      <<: *staticBuilder
       args:
-        BUILD_IMAGE: 'golang:1.13.6-alpine'
+        BUILD_IMAGE: golang:alpine
         BUILD_PKGS: libcap
-        POST_BUILD_CMD: 'setcap cap_net_raw+ep /tmp/mtr/usr/bin/mtr'
+        BUILD_PATH: /go/src/github.com/tonobo/mtr
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/tonobo
+          cd /go/src/github.com/tonobo && git clone -b master https://github.com/tonobo/mtr.git
+        POST_BUILD_CMD: setcap cap_net_raw+ep /tmp/mtr/usr/bin/mtr
         BINARY_NAME: mtr
-        GIT_REPO: https://github.com/tonobo/mtr.git
-        GIT_BRANCH: master
-        BUILD_PATH: /go/src/mtr
-        BUILD_CMD: 'go build -trimpath -tags netgo -o /tmp/mtr/usr/bin/mtr'
+        BUILD_CMD: go build -trimpath -tags netgo -o /tmp/mtr/usr/bin/mtr
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-gomtr:alpine
+
+  # goMTR with a `FROM scratch` final base image
+  goMTRScratch:
+    build:
+      <<: *staticBuilder
+      args:
+        BUILD_IMAGE: golang:alpine
+        BUILD_PKGS: libcap
+        BUILD_PATH: /go/src/github.com/tonobo/mtr
+        BINARY_NAME: mtr
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/tonobo
+          cd /go/src/github.com/tonobo && git clone -b master https://github.com/tonobo/mtr.git
+        POST_BUILD_CMD: setcap cap_net_raw+ep /tmp/mtr/usr/bin/mtr
+
+        BUILD_CMD: go build -trimpath -tags netgo -o /tmp/mtr/usr/bin/mtr
+        FINAL_BASE: scratch
     image: kristianfoss/programs-gomtr:scratch
+
+
+  #
+  # Git
+  #
+  # Website:
+  # GitHub: https://github.com/git/git
+
+  # Git CLI with a `FROM alpine` final base image
+  gitAlpine:
+    build:
+      <<: *staticBuilder
+      args:
+        FINAL_BASE: alpine
+        USER: user
+        BUILD_IMAGE: alpine
+        BUILD_PKGS: openssl-dev openssl-libs-static curl-dev curl-static gettext-libs gettext-static
+        BUILD_PATH: /src/git
+        FETCH_CMD: |
+          mkdir -p /src
+          cd /src && git clone -b master https://github.com/git/git.git
+        BUILD_CMD: |
+          make configure
+          ./configure --prefix=/usr --help
+          make all
+        POST_BUILD_CMD: 'mv /go/src/github.com/rootless-containers/rootlesskit/bin/* /tmp/rootlesskit/usr/bin/'
+        POST_CMD: |
+          echo "root:x:0:0:root:/root:/usr/sbin/nologin" > /tmp/rootlesskit/etc/passwd
+          echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" >> /tmp/rootlesskit/etc/passwd
+          cp /usr/bin/newgidmap /tmp/rootlesskit/usr/bin/newgidmap
+          cp /usr/bin/newuidmap /tmp/rootlesskit/usr/bin/newuidmap
+          echo 'user:100000:65536' > /tmp/rootlesskit/etc/subuid;
+          echo 'user:100000:65536' > /tmp/rootlesskit/etc/subgid;
+          cp /etc/shadow /tmp/rootlesskit/etc/shadow
+        BINARY_NAME: git
+    image: kristianfoss/programs-git:cli-alpine
+
 
   #
   # LibreSpeed
@@ -179,17 +244,20 @@ services:
   # LibreSpeed Go Version
   libreSpeedGoAlpine:
     build:
-      <<: *gitStaticBuilder
+      <<: *staticBuilder
       args:
-        BUILD_IMAGE: 'golang:1.14.2-alpine'
+        BUILD_IMAGE: golang:alpine
         BINARY_NAME: speedtest
-        GIT_REPO: https://github.com/librespeed/speedtest.git
-        GIT_BRANCH: go
-        BUILD_PATH: /go/src/librespeed
+        BUILD_PKGS: bash
+        BUILD_PATH: /go/src/github.com/librespeed/speedtest
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/librespeed
+          cd /go/src/github.com/librespeed && git clone -b go https://github.com/librespeed/speedtest.git
         BUILD_CMD: go build -trimpath -o /tmp/speedtest/usr/bin/speedtest main.go
-        POST_BUILD_CMD: 'cp -R /go/src/librespeed/assets /tmp/speedtest/assets'
-        FINAL_BASE: 'alpine'
-    image: kristianfoss/programs-librespeed:scratch
+        POST_BUILD_CMD: cp -R /go/src/github.com/librespeed/speedtest/assets /tmp/speedtest/assets
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-librespeed:go-alpine
+
 
   #
   # WireGuard Tools
@@ -215,6 +283,7 @@ services:
     image: kristianfoss/programs-wg:alpine
     volumes:
       - ./TMP/Wireguard/start.sh:/start.sh
+
 
   #
   # WireGuard Go
@@ -306,7 +375,7 @@ services:
   # Website: https://smallstep.com/certificates/
   #
 
-  # Step CLI with `FROM scratch` final base image
+  # Step Certificates with `FROM scratch` final base image
   stepCertificatesScratch:
     build:
       <<: *staticBuilder
@@ -320,7 +389,7 @@ services:
         BINARY_NAME: step-ca
     image: kristianfoss/programs-step:scratch-certificates
 
-  # Step CLI with `FROM alpine` final base image
+  # Step Certificates with `FROM alpine` final base image
   stepCertificatesAlpine:
     build:
       <<: *staticBuilder
@@ -334,6 +403,12 @@ services:
         FINAL_BASE: alpine
     image: kristianfoss/programs-step:alpine-certificates
 
+
+  #
+  # WIP Vault
+  # 
+  #
+  #
 
   # vaultAlpine:
   #   build:
@@ -376,12 +451,12 @@ services:
     build:
       <<: *gitStaticBuilder
       args:
-        FINAL_BASE: 'alpine'
-        BUILD_IMAGE: 'golang:1.13.7-alpine'
-        BUILD_PKGS: 'zip'
+        FINAL_BASE: alpine
+        BUILD_IMAGE: golang:1.13.7-alpine
+        BUILD_PKGS: zip
         BUILD_PATH: /go/src/github.com/gravitational/teleport
-        BUILD_CMD: 'make full'
-        POST_BUILD_CMD: 'mv /go/src/github.com/gravitational/teleport/build/tctl /tmp/tctl/usr/bin/tctl'
+        BUILD_CMD: make full
+        POST_BUILD_CMD: mv /go/src/github.com/gravitational/teleport/build/tctl /tmp/tctl/usr/bin/tctl
         BINARY_NAME: tctl
         GIT_REPO: https://github.com/gravitational/teleport.git
         GIT_BRANCH: master
@@ -403,38 +478,124 @@ services:
         GIT_BRANCH: master
     image: kristianfoss/programs-teleport:alpine-tsh
 
+  #
+  # ETCD
+  # 
+  # Website: 
+  # GitHub: https://github.com/etcd-io/etcd
+  #
   etcdAlpine:
     build:
-      <<: *gitStaticBuilder
+      <<: *staticBuilder
       args:
-        FINAL_BASE: 'alpine'
-        BUILD_IMAGE: 'golang:1.14.4-alpine3.12'
-        BUILD_PKGS: 'zip bash'
+        FINAL_BASE: alpine
+        BUILD_IMAGE: golang:alpine
+        BUILD_PKGS: ''
         BUILD_PATH: /go/src/github.com/etcd-io/etcd
-        BUILD_CMD: './build'
-        POST_BUILD_CMD: 'mv /go/src/github.com/etcd-io/etcd/bin/* /tmp/etcd/usr/bin/'
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/etcd-io/
+          cd /go/src/github.com/etcd-io && git clone -b master https://github.com/etcd-io/etcd.git
+        BUILD_CMD: ./build
+        POST_BUILD_CMD: mv /go/src/github.com/etcd-io/etcd/bin/* /tmp/etcd/usr/bin/
         BINARY_NAME: etcd
-        GIT_REPO: https://github.com/etcd-io/etcd.git
-        GIT_BRANCH: master
     image: kristianfoss/programs-etcd:alpine-etcd
 
 
+  #
+  # Cloudflared CLI
+  #
+  # Website: https://cloudflare.com
+  # GitHub: 
 
+  # Cloudflared CLI with a `FROM alpine` final base image
   cloudflaredAlpine:
     build:
-      <<: *gitStaticBuilder
+      <<: *staticBuilder
       args:
-        FINAL_BASE: 'alpine'
-        BUILD_IMAGE: 'golang:1.13.7-alpine'
-        BUILD_PKGS: 'zip'
+        FINAL_BASE: alpine
+        BUILD_IMAGE: golang:1.13.7-alpine
+        BUILD_PKGS: ''
         BUILD_PATH: /go/src/github.com/cloudflare/cloudflared
-        BUILD_CMD: 'make cloudflared'
-        POST_BUILD_CMD: 'mv /go/src/github.com/cloudflare/cloudflared/cloudflared /tmp/cloudflared/usr/bin/cloudflared'
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/cloudflare/
+          cd /go/src/github.com/cloudflare/ && git clone -b master https://github.com/cloudflare/cloudflared.git
+          wget -O - https://github.com/shadow-maint/shadow/releases/download/4.8.1/shadow-4.8.1.tar.gz | tar xz -C /src/shadow --strip-components=1
+        BUILD_CMD: |
+          make cloudflared
+        POST_BUILD_CMD: |
+          mv /go/src/github.com/cloudflare/cloudflared/cloudflared /tmp/cloudflared/usr/bin/cloudflared
         BINARY_NAME: cloudflared
-        GIT_REPO: https://github.com/cloudflare/cloudflared.git
-        GIT_BRANCH: master
     image: kristianfoss/programs-cloudflared:alpine
 
+  # Cloudflared CLI with a `FROM scratch` final base image
+  cloudflaredScratch:
+    build:
+      <<: *staticBuilder
+      args:
+        FINAL_BASE: scratch
+        BUILD_IMAGE: golang:1.13.7-alpine
+        BUILD_PKGS: ''
+        BUILD_PATH: /go/src/github.com/cloudflare/cloudflared
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/cloudflare/
+          cd /go/src/github.com/cloudflare/ && git clone -b master https://github.com/cloudflare/cloudflared.git
+          wget -O - https://github.com/shadow-maint/shadow/releases/download/4.8.1/shadow-4.8.1.tar.gz | tar xz -C /src/shadow --strip-components=1
+        BUILD_CMD: |
+          make cloudflared
+        POST_BUILD_CMD: |
+          mv /go/src/github.com/cloudflare/cloudflared/cloudflared /tmp/cloudflared/usr/bin/cloudflared
+        BINARY_NAME: cloudflared
+    image: kristianfoss/programs-cloudflared:alpine
+
+
+  #
+  # Shadow
+  #
+  # GitHub: 
+  #
+
+  # Shadow with a `FROM alpine` final base image
+  shadowAlpine:
+    build:
+      <<: *staticBuilder
+      args:
+        FINAL_BASE: alpine
+        USER: root
+        BUILD_IMAGE: alpine
+        BUILD_PKGS: autoconf automake linux-pam-dev gettext-libs gettext-static
+        BUILD_PATH: /src/shadow
+        BUILD_CMD: |
+          ./configure --prefix=/usr  \
+            --without-audit \
+            --disable-dependency-tracking \
+            --with-gnu-ld \
+            --disable-nls \
+            --without-group-name-max-length \
+            --enable-static
+          make
+          make DESTDIR="/tmp/newuidmap" install
+        POST_BUILD_CMD: |
+          ldd /tmp/newuidmap/usr/bin/newuidmap
+        POST_CMD: |
+          echo "root:x:0:0:root:/root:/usr/sbin/nologin" > /tmp/newuidmap/etc/passwd
+          echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" >> /tmp/newuidmap/etc/passwd
+          echo 'user:100000:65536' >> /tmp/newuidmap/etc/subuid; 
+          echo 'user:100000:65536' >> /tmp/newuidmap/etc/subgid
+          echo 'HelloWorld'
+        BINARY_NAME: newuidmap
+        FETCH_CMD: |
+          mkdir -p /src/shadow
+          wget -O - https://github.com/shadow-maint/shadow/releases/download/4.8.1/shadow-4.8.1.tar.gz | tar xz -C /src/shadow --strip-components=1
+    image: kristianfoss/programs-shadow:alpine
+
+
+  #
+  # Rootless Kit
+  #
+  # GitHub: 
+  #
+
+  # Rootless Kit with a `FROM alpine` final base image
   rootlesesKitAlpine:
     build:
       <<: *staticBuilder
@@ -460,6 +621,58 @@ services:
           ls -lah ./
           cd /go/src/github.com/rootless-containers && git clone -b master https://github.com/rootless-containers/rootlesskit.git
     image: kristianfoss/programs-rootlesskit:rootless-alpine
+
+  # Rootless Kit with a `FROM scratch` final base image
+  rootlesesKitScratch:
+    build:
+      <<: *staticBuilder
+      args:
+        FINAL_BASE: scratch
+        USER: user
+        BUILD_IMAGE: golang:1.14.4-alpine3.12
+        BUILD_PKGS: libc-dev shadow-uidmap
+        BUILD_PATH: /go/src/github.com/rootless-containers/rootlesskit
+        BUILD_CMD: make
+        POST_BUILD_CMD: 'mv /go/src/github.com/rootless-containers/rootlesskit/bin/* /tmp/rootlesskit/usr/bin/'
+        POST_CMD: |
+          echo "root:x:0:0:root:/root:/usr/sbin/nologin" > /tmp/rootlesskit/etc/passwd
+          echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" >> /tmp/rootlesskit/etc/passwd
+          cp /usr/bin/newgidmap /tmp/rootlesskit/usr/bin/newgidmap
+          cp /usr/bin/newuidmap /tmp/rootlesskit/usr/bin/newuidmap
+          echo 'user:100000:65536' > /tmp/rootlesskit/etc/subuid;
+          echo 'user:100000:65536' > /tmp/rootlesskit/etc/subgid;
+          cp /etc/shadow /tmp/rootlesskit/etc/shadow
+        BINARY_NAME: rootlesskit
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/rootless-containers
+          cd /go/src/github.com/rootless-containers 
+          ls -lah ./
+          cd /go/src/github.com/rootless-containers && git clone -b master https://github.com/rootless-containers/rootlesskit.git
+    image: kristianfoss/programs-rootlesskit:rootless-scratch
+
+  #
+  # Docker
+  #
+  # Website: https://docker.com
+  #
+
+  # Rootless DockerD with a `FROM alpine` final base image
+  rootlesesDockerDAlpine:
+    build:
+      context: ./RootlessDocker
+      args: 
+        CLI_NAME: dockerd
+        FINAL_BASE: kristianfoss/programs-rootlesskit:rootless-alpine
+    image: kristianfoss/programs-docker:dockerd-rootless-alpine
+
+  
+  rootlesesDockerDScratch:
+    build:
+      context: ./RootlessDocker
+      args: 
+        CLI_NAME: dockerd
+        FINAL_BASE: kristianfoss/programs-rootlesskit:rootless-scratch
+    image: kristianfoss/programs-docker:dockerd-rootless-scratch
 
   ##
   ## SOURCE Images
@@ -509,12 +722,6 @@ services:
           mkdir -p /tmp/src && cd /tmp/src/ && git clone -b master git://git.kernel.org/pub/scm/network/iproute2/iproute2.git
     image: kristianfoss/source-iproute2:scratch
 
-  rootlesesDockerDAlpine:
-    build:
-      context: ./RootlessDocker
-      args: 
-        CLI_NAME: 'dockerd'
-    image: kristianfoss/programs-docker:dockerd-rootless-alpine
 
   # SAMBA:
   #   build:
