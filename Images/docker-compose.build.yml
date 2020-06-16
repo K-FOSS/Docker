@@ -415,23 +415,24 @@ services:
   #
   teleportAlpine:
     build:
-      <<: *gitStaticBuilder
+      <<: *staticBuilder
       args:
-        FINAL_BASE: alpine
         BUILD_IMAGE: golang:alpine
         BUILD_PKGS: 'zip'
         BUILD_PATH: /go/src/github.com/gravitational/teleport
-        BUILD_CMD: 'make full'
+        FETCH_CMD: |
+          mkdir -p /go/src/github.com/gravitational
+          cd /go/src/github.com/gravitational && git clone -b master https://github.com/gravitational/teleport.git
+        BUILD_CMD: make full
         POST_BUILD_CMD: 'cp /go/src/github.com/gravitational/teleport/build/teleport /go/src/github.com/gravitational/teleport/build/tctl /tmp/teleport/usr/bin/'
         BINARY_NAME: teleport
-        GIT_REPO: https://github.com/gravitational/teleport.git
-        GIT_BRANCH: master
+        FINAL_BASE: alpine
     image: kristianfoss/programs-teleport:alpine-teleport
 
   # Teleport TCTL CLI with a `FROM alpine` final base image
   teleportTCTLAlpine:
     build:
-      <<: *gitStaticBuilder
+      <<: *staticBuilder
       args:
         BUILD_IMAGE: golang:alpine
         BUILD_PKGS: zip
