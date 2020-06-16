@@ -22,7 +22,7 @@ RUN apk add --no-cache \
   ncurses-dev \
   binutils-gold \
   gnupg \
-  python \
+  python2 \
   libstdc++ 
 
 RUN mkdir -p /tmp/busybox \
