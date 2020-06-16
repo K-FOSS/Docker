@@ -23,46 +23,34 @@ x-simpleAlpineBuilder: &simpleAlpineBuilder
   <<: *baseBuilder
   dockerfile: SimpleAlpine.Dockerfile
 
-
-x-advancedAlpineBuilder: &advancedAlpineBuilder
-  context: ./Builders/AdvancedBuilder
-
-
 x-generalAlpineBuilder: &generalAlpineBuilder
   context: ./Builders/
   dockerfile: GeneralAlpine.Dockerfile
-
 
 x-gitStaticBuilder: &gitStaticBuilder
   context: ./Builders/
   dockerfile: GitStatic.Dockerfile
 
-
 x-staticBuilder: &staticBuilder
   context: ./Builders/
   dockerfile: StaticBuilder.Dockerfile
-
 
 x-scriptBuilder: &scriptBuilder
   context: ./Builders
   dockerfile: ScriptRunner.Dockerfile
 
-
 x-dockerCLIBuilder: &dockerCLIBuilder
   context: ./Docker
   target: cli
-
 
 x-opensshBuilder: &opensshBuilder
   context: ./OpenSSH
   target: cli
 
-
 x-sshBuilder: &sshBuilder
   context: ./OpenSSH
   target: cli
   dockerfile: Dockerfile.Oasis
-
 
 services:
   nodeBuilderImageBuild:
@@ -71,7 +59,6 @@ services:
       dockerfile: Node.dockerfile
       target: builder
     image: kristianfoss/builders-node:build
-
 
   nodeBuilderImageFetcher:
     build:
@@ -115,10 +102,10 @@ services:
   # PGWeb
   #
   # Website: http://sosedoff.github.io/pgweb/
-  # GitHub: https://github.com/sosedoff/pgweb 
+  # GitHub: https://github.com/sosedoff/pgweb
   # Docs: https://github.com/sosedoff/pgweb/wiki
   #
-  pgWebStatic:
+  pgWebScratch:
     build:
       <<: *staticBuilder
       args:
@@ -130,8 +117,8 @@ services:
         BUILD_SETUP: make setup
         BUILD_CMD: go build -o /tmp/pgweb/usr/bin/pgweb
         BINARY_NAME: pgweb
+        FINAL_BASE: scratch
     image: kristianfoss/programs-pgweb:scratch
-
 
   #
   # Pulumi WIP
@@ -154,7 +141,6 @@ services:
   #       GIT_REPO: https://github.com/pulumi/pulumi.git
   #       GIT_BRANCH: master
   #   image: kristianfoss/programs-pulumi:scratch
-
 
   #
   # Go MTR
@@ -197,7 +183,6 @@ services:
         FINAL_BASE: scratch
     image: kristianfoss/programs-gomtr:scratch
 
-
   #
   # Git
   #
@@ -212,27 +197,25 @@ services:
         FINAL_BASE: alpine
         USER: user
         BUILD_IMAGE: alpine
-        BUILD_PKGS: openssl-dev openssl-libs-static curl-dev curl-static gettext-libs gettext-static linux-headers
+        BUILD_PKGS: zlib-dev zlib-static pcre2-dev build-base curl-dev curl-static autoconf automake openssl-dev	openssl-libs-static expat-dev expat-static
         BUILD_PATH: /src/git
         FETCH_CMD: |
           mkdir -p /src
           cd /src && git clone -b master https://github.com/git/git.git
         BUILD_CMD: |
           make configure
-          ./configure --prefix=/usr --help
-          make all
-        POST_BUILD_CMD: 'mv /go/src/github.com/rootless-containers/rootlesskit/bin/* /tmp/rootlesskit/usr/bin/'
+          echo "NO_GETTEXT=YesPlease\nNO_SVN_TESTS=YesPlease\nNO_REGEX=YesPlease\nUSE_LIBPCRE2=YesPlease\nNO_SYS_POLL_H=1\nCFLAGS=$CFLAGS\nICONV_OMITS_BOM=Yes" > config.mak
+          ./configure --prefix=/usr --without-tcltk --with-curl
+          make
+          make DESTDIR="/tmp/git" install
+        POST_BUILD_CMD: |
+          ls -lah /tmp/git/usr/bin
         POST_CMD: |
-          echo "root:x:0:0:root:/root:/usr/sbin/nologin" > /tmp/rootlesskit/etc/passwd
-          echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" >> /tmp/rootlesskit/etc/passwd
-          cp /usr/bin/newgidmap /tmp/rootlesskit/usr/bin/newgidmap
-          cp /usr/bin/newuidmap /tmp/rootlesskit/usr/bin/newuidmap
-          echo 'user:100000:65536' > /tmp/rootlesskit/etc/subuid;
-          echo 'user:100000:65536' > /tmp/rootlesskit/etc/subgid;
-          cp /etc/shadow /tmp/rootlesskit/etc/shadow
+          mkdir -p /tmp/git/etc
+          echo "root:x:0:0:root:/root:/usr/sbin/nologin" > /tmp/git/etc/passwd
+          echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" >> /tmp/git/etc/passwd
         BINARY_NAME: git
     image: kristianfoss/programs-git:cli-alpine
-
 
   #
   # LibreSpeed
@@ -257,7 +240,6 @@ services:
         POST_BUILD_CMD: cp -R /go/src/github.com/librespeed/speedtest/assets /tmp/speedtest/assets
         FINAL_BASE: alpine
     image: kristianfoss/programs-librespeed:go-alpine
-
 
   #
   # WireGuard Tools
@@ -284,7 +266,6 @@ services:
     volumes:
       - ./TMP/Wireguard/start.sh:/start.sh
 
-
   #
   # WireGuard Go
   #
@@ -306,13 +287,12 @@ services:
   #       BUILD_CMD: 'go build -trimpath -tags netgo -o /tmp/wireguard-go/usr/bin/wireguard-go'
   #   image: kristianfoss/programs-wireguard-go:alpine
 
-
   #
   # MTR
   #
   # Website: http://www.bitwizard.nl/mtr/
   # GitHub: https://github.com/traviscross/mtr
-  # Docs: 
+  # Docs:
   #
   MTR:
     build:
@@ -330,7 +310,6 @@ services:
         BUILD_PATH: /tmp/src/mtr
         BUILD_CMD: 'make -j2'
     image: kristianfoss/programs-mtr:alpine
-
 
   #
   # Step CLI
@@ -370,10 +349,9 @@ services:
         FINAL_BASE: alpine
     image: kristianfoss/programs-step:alpine-cli
 
-
   #
   # Step Certificates Server
-  # 
+  #
   # Website: https://smallstep.com/certificates/
   #
 
@@ -408,10 +386,9 @@ services:
         FINAL_BASE: alpine
     image: kristianfoss/programs-step:alpine-certificates
 
-
   #
   # WIP Vault
-  # 
+  #
   #
   #
 
@@ -487,11 +464,10 @@ services:
         FINAL_BASE: alpine
     image: kristianfoss/programs-teleport:alpine-tsh
 
-
   #
   # ETCD
-  # 
-  # Website: 
+  #
+  # Website:
   # GitHub: https://github.com/etcd-io/etcd
   #
   etcdAlpine:
@@ -510,12 +486,11 @@ services:
         BINARY_NAME: etcd
     image: kristianfoss/programs-etcd:alpine-etcd
 
-
   #
   # Cloudflared CLI
   #
   # Website: https://cloudflare.com
-  # GitHub: 
+  # GitHub:
 
   # Cloudflared CLI with a `FROM alpine` final base image
   cloudflaredAlpine:
@@ -555,11 +530,10 @@ services:
         BINARY_NAME: cloudflared
     image: kristianfoss/programs-cloudflared:alpine
 
-
   #
   # Shadow
   #
-  # GitHub: 
+  # GitHub:
   #
 
   # Shadow with a `FROM alpine` final base image
@@ -596,11 +570,10 @@ services:
           wget -O - https://github.com/shadow-maint/shadow/releases/download/4.8.1/shadow-4.8.1.tar.gz | tar xz -C /src/shadow --strip-components=1
     image: kristianfoss/programs-shadow:alpine
 
-
   #
   # Rootless Kit
   #
-  # GitHub: 
+  # GitHub:
   #
 
   # Rootless Kit with a `FROM alpine` final base image
@@ -658,7 +631,6 @@ services:
           cd /go/src/github.com/rootless-containers && git clone -b master https://github.com/rootless-containers/rootlesskit.git
     image: kristianfoss/programs-rootlesskit:rootless-scratch
 
-
   #
   # Docker
   #
@@ -669,20 +641,18 @@ services:
   rootlesesDockerDAlpine:
     build:
       context: ./RootlessDocker
-      args: 
+      args:
         CLI_NAME: dockerd
         FINAL_BASE: kristianfoss/programs-rootlesskit:rootless-alpine
     image: kristianfoss/programs-docker:dockerd-rootless-alpine
 
-  
   rootlesesDockerDScratch:
     build:
       context: ./RootlessDocker
-      args: 
+      args:
         CLI_NAME: dockerd
         FINAL_BASE: kristianfoss/programs-rootlesskit:rootless-scratch
     image: kristianfoss/programs-docker:dockerd-rootless-scratch
-
 
   #
   # CloudC2
@@ -690,7 +660,7 @@ services:
   # Website: https://shop.hak5.org/products/c2
   # Docs: https://docs.hak5.org/hc/en-us/categories/360001177114-Cloud-C2
   #
-  
+
   # CloudC2 with a `FROM alpine` final base image
   cloudC2Alpine:
     build:
@@ -713,10 +683,9 @@ services:
         BINARY_NAME: cloud_c2
     image: kristianfoss/programs-cloudc2:alpine
 
-
   ##
   ## SOURCE Images
-  ## 
+  ##
   ##
 
   # iptablesSourceScratch:
@@ -736,9 +705,6 @@ services:
   #       FETCH_CMD: |
   #         git clone -b master https://github.com/rootless-containers/rootlesskit.git
   #   image: kristianfoss/source-iptables:scratch
-
-
-
 
   iproute2SourceScratch:
     build:
@@ -760,7 +726,6 @@ services:
         FETCH_CMD: |
           mkdir -p /tmp/src && cd /tmp/src/ && git clone -b master git://git.kernel.org/pub/scm/network/iproute2/iproute2.git
     image: kristianfoss/source-iproute2:scratch
-
 
   # SAMBA:
   #   build:
@@ -792,8 +757,8 @@ services:
   #
   # KeyBase CLI
   #
-  # Website: 
-  # GitHub: 
+  # Website:
+  # GitHub:
   #
 
   keybaseAlpine:
@@ -803,7 +768,6 @@ services:
       args:
         PKG_ARGS: '--repository http://dl-cdn.alpinelinux.org/alpine/edge/testing'
         PKGS: 'keybase-client gnupg'
-
 
   sshScratch:
     build:

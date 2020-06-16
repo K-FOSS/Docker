@@ -11,7 +11,6 @@ docker-compose up -d
 ```
 
 Get the setup token
-
 ```
 docker-compose logs CloudC2
 ```

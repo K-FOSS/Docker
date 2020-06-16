@@ -36,7 +36,7 @@ RUN /bin/sh -c "${BUILD_CONFIGURE}"
 
 
 ENV LD_FLAGS='-static -s -w'
-ENV CFLAGS='-static-libgcc'
+ENV CFLAGS='-static-libgcc -static'
 
 
 ARG BUILD_CMD='echo "no build cmd"'
