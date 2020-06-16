@@ -18,7 +18,7 @@
             {
               "match": [
                 {
-                  "host": ["meet.example.com"]
+                  "host": ["pgweb.example.com"]
                 }
               ],
               "handle": [
@@ -26,7 +26,7 @@
                   "handler": "reverse_proxy",
                   "upstreams": [
                     {
-                      "dial": "jitsiWeb:80"
+                      "dial": "pgWeb:8080"
                     }
                   ]
                 }

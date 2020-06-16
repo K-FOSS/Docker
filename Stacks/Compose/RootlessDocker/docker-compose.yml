@@ -1,0 +1,22 @@
+version: '3.8'
+
+volumes:
+  dockerSocket:
+
+services:
+  DockerD:
+    image: kristianfoss/programs-docker:dockerd-rootless-alpine
+    restart: unless-stopped
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - dockerSocket:/run/user/1000
+
+  Shell:
+    image: kristianfoss/programs-docker:docker-alpine
+    tty: true
+    stdin_open: true
+    entrypoint: ['/bin/sh', '-i']
+    volumes:
+      - dockerSocket:/var/run

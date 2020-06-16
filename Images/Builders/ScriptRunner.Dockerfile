@@ -1,6 +1,6 @@
 ARG SCRIPT_NAME="scriper"
 ARG SCRIPT_RAW_URL=""
-ARG alpine='alpine:3.11'
+ARG alpine='alpine'
 
 FROM ${alpine}
 ARG PKGS='bash'

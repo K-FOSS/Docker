@@ -39,7 +39,7 @@ RUN ln -s ./${BINARY_NAME} ./cliLink \
   && chmod +X ./cliLink
 
 
-FROM alpine:3.11
+FROM alpine
 RUN apk add --no-cache libcap
 
 COPY --from=builder /tmp/mtr /tmp/mtr

@@ -1,0 +1,24 @@
+# standalone proxy connected to
+teleport:
+  auth_token: foo
+  nodename: Core-Proxy
+  advertise_ip: TeleportProxy
+  log:
+    output: stdout
+    severity: DEBUG
+  auth_servers:
+    - Teleport:3025
+  data_dir: /var/lib/teleport
+  storage:
+    path: /var/lib/teleport/backend
+    type: dir
+
+auth_service:
+  enabled: no
+
+ssh_service:
+  enabled: no
+
+proxy_service:
+  enabled: yes
+  public_addr: proxy.kristianjones.dev:443

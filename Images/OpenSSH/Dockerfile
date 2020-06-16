@@ -1,5 +1,5 @@
 ARG FINAL_BASE='scratch'
-ARG ALPINE='alpine:3.11'
+ARG ALPINE='alpine'
 ARG CLI_NAME='ssh'
 
 FROM ${ALPINE} as build-base

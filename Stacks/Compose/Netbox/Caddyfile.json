@@ -7,8 +7,9 @@
       "http_port": 8080,
       "https_port": 8443,
       "servers": {
-        "kristianjones.dev": {
+        "example.com": {
           "listen": [":8080"],
+
           "automatic_https": {
             "disable": true
           },
@@ -17,7 +18,7 @@
             {
               "match": [
                 {
-                  "host": ["localhost.kristianjones.dev"]
+                  "host": ["netbox.example.com"]
                 }
               ],
               "handle": [
@@ -57,10 +58,6 @@
         }
       }
     },
-    "tls": {
-      "certificates": {
-        "load_folders": ["/TLS"]
-      }
-    }
+    "tls": {}
   }
 }

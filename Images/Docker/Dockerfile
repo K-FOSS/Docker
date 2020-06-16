@@ -1,5 +1,5 @@
 ARG FINAL_BASE='scratch'
-ARG ALPINE='alpine:3.11'
+ARG ALPINE='alpine:3.12'
 ARG CLI_NAME='docker'
 
 FROM ${ALPINE} as fetcher
@@ -35,8 +35,6 @@ COPY --from=fetcher /tmp/docker/${CLI_NAME} /tmp/cli/usr/bin/
 RUN cd /tmp/cli/usr/bin \
   && ln -s ./${CLI_NAME} ./cliLink \
   && chmod +X /tmp/cli/usr/bin/cliLink
-
-
 
 RUN mkdir -p /tmp/cli/root/.docker/cli-plugins \
   && wget -O /tmp/cli/root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64  \

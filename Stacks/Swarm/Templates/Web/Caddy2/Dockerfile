@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 
 
 
-FROM alpine:3.11.0 AS usermaker
+FROM alpine AS usermaker
 RUN addgroup -S caddy \
   && adduser -SD -h /var/lib/caddy/ -g 'Caddy web server' -s /sbin/nologin -G caddy caddy
 

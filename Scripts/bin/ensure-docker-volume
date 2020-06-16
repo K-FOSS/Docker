@@ -3,7 +3,7 @@ VOLUME_NAME="${1}"
 if [ ! "$(docker volume ls -q -f name=${VOLUME_NAME})" ]; then
   # Create volume if it doesn't exist
   docker volume create ${VOLUME_NAME} &>/dev/null
-  docker run --rm -v ${VOLUME_NAME}:/tmp/chown alpine:3.11 chown -R 1000:1000 /tmp/chown
+  docker run --rm -v ${VOLUME_NAME}:/tmp/chown alpine chown -R 1000:1000 /tmp/chown
 fi
 
 exit 0

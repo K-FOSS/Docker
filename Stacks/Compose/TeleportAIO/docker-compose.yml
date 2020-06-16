@@ -1,18 +1,73 @@
-version: '3.7'
+version: '3.8'
 
 volumes:
-  teleport:
+  teleportData:
+  teleportProxyData:
+  teleportNodeData:
 
 networks:
-  teleportData:
+  publicWeb:
 
 services:
+  Web:
+    image: caddy/caddy:scratch
+    restart: unless-stopped
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
+    volumes:
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
+    networks:
+      - publicWeb
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: udp
+        mode: host
+
   Teleport:
     image: kristianfoss/programs-teleport:alpine-teleport
-    tty: true
-    stdin_open: true
-    command: ['start']
+    command:
+      [
+        'start',
+        '--config',
+        '/etc/Teleport.yaml',
+        '--insecure',
+        '--insecure-no-tls',
+      ]
+    volumes:
+      - ./Teleport.yaml:/etc/Teleport.yaml:ro
+      - teleportData:/var/lib/teleport
+    networks:
+      - publicWeb
     ports:
       - 3080:3080
       - 3023:3023
       - 3025:3025
+
+  TeleportProxy:
+    image: kristianfoss/programs-teleport:alpine-teleport
+    command:
+      ['start', '--config', '/etc/TeleportProxy.yaml', '--insecure', '-d']
+    volumes:
+      - ./TeleportProxy.yaml:/etc/TeleportProxy.yaml:ro
+      - teleportProxyData:/var/lib/teleport
+    networks:
+      - publicWeb
+
+  TeleportNode:
+    build:
+      context: ./Node
+    image: kristianfoss/programs-teleport:test-node
+    command: ['start', '--config', '/etc/TeleportNode.yaml', '--insecure', '-d']
+    volumes:
+      - ./TeleportNode.yaml:/etc/TeleportNode.yaml:ro
+      - teleportNodeData:/var/lib/teleport
+    networks:
+      - publicWeb
