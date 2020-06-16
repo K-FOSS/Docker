@@ -441,7 +441,7 @@ services:
           mkdir -p /go/src/github.com/gravitational
           cd /go/src/github.com/gravitational && git clone -b master https://github.com/gravitational/teleport.git
         BUILD_CMD: |
-          make tctl
+          make full
         POST_BUILD_CMD: mv /go/src/github.com/gravitational/teleport/build/tctl /tmp/tctl/usr/bin/tctl
         BINARY_NAME: tsh
         FINAL_BASE: alpine
@@ -459,7 +459,7 @@ services:
           mkdir -p /go/src/github.com/gravitational
           cd /go/src/github.com/gravitational && git clone -b master https://github.com/gravitational/teleport.git
         BUILD_CMD: |
-          make tsh
+          make full
         POST_BUILD_CMD: mv /go/src/github.com/gravitational/teleport/build/tsh /tmp/tsh/usr/bin/tsh
         BINARY_NAME: tsh
         FINAL_BASE: alpine
