@@ -746,30 +746,30 @@ services:
   #
 
   # Mono CLI with a 'FROM alpine' final base image
-  monoAlpine:
-    build:
-      <<: *staticBuilder
-      args:
-        FINAL_BASE: alpine
-        BUILD_IMAGE: alpine
-        BUILD_PKGS: curl ack python3
-        BUILD_PATH: /src/mono
-        FETCH_CMD: |
-          mkdir -p /src/mono
-          export MONO_VERSION=$$(wget -O - -q https://download.mono-project.com/sources/mono/ | ack -o '(?<=>mono-)\d{1}\.\d{1}\.\d{1}\.\d{3}' | tail -1)
-          echo "Getting Mono Version $${MONO_VERSION}"
-          wget -O - https://download.mono-project.com/sources/mono/mono-$${MONO_VERSION}.tar.xz | tar xJ -C /src/mono --strip-components=1
-          wget -O /tmp/mono/python3.patch https://git.alpinelinux.org/aports/plain/testing/mono/python3.patch
-        BUILD_CMD: |
-          patch -p1 -i ./python3.patch
-          ./autogen.sh --prefix=/usr --disable-dependency-tracking --enable-parallel-mark --with-mcs-docs=no --without-sigaltstack --disable-boehm --disable-crash-reporting  --enable-silent-rules --with-gnu-ld
-          make
-          make -j1 DESTDIR="/tmp/mono" install
+  # monoAlpine:
+  #   build:
+  #     <<: *staticBuilder
+  #     args:
+  #       FINAL_BASE: alpine
+  #       BUILD_IMAGE: alpine
+  #       BUILD_PKGS: curl ack python3
+  #       BUILD_PATH: /src/mono
+  #       FETCH_CMD: |
+  #         mkdir -p /src/mono
+  #         export MONO_VERSION=$$(wget -O - -q https://download.mono-project.com/sources/mono/ | ack -o '(?<=>mono-)\d{1}\.\d{1}\.\d{1}\.\d{3}' | tail -1)
+  #         echo "Getting Mono Version $${MONO_VERSION}"
+  #         wget -O - https://download.mono-project.com/sources/mono/mono-$${MONO_VERSION}.tar.xz | tar xJ -C /src/mono --strip-components=1
+  #         wget -O /tmp/mono/python3.patch https://git.alpinelinux.org/aports/plain/testing/mono/python3.patch
+  #       BUILD_CMD: |
+  #         patch -p1 -i ./python3.patch
+  #         ./autogen.sh --prefix=/usr --disable-dependency-tracking --enable-parallel-mark --with-mcs-docs=no --without-sigaltstack --disable-boehm --disable-crash-reporting  --enable-silent-rules --with-gnu-ld
+  #         make
+  #         make -j1 DESTDIR="/tmp/mono" install
 
-        POST_BUILD_CMD: |
-          ls -lah /tmp
-        BINARY_NAME: mono
-    image: kristianfoss/programs-mono:cli-alpine
+  #       POST_BUILD_CMD: |
+  #         ls -lah /tmp
+  #       BINARY_NAME: mono
+  #   image: kristianfoss/programs-mono:cli-alpine
 
   ##
   ## SOURCE Images
