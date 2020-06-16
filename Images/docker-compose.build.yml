@@ -328,7 +328,7 @@ services:
           mkdir -p /go/src/github.com/smallstep
           cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/cli.git
         BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/github.com/smallstep/bin/step /tmp/step/usr/bin/step
+        POST_BUILD_CMD: mv /go/src/github.com/smallstep/cli/bin/step /tmp/step/usr/bin/step
         BINARY_NAME: step
         FINAL_BASE: scratch
     image: kristianfoss/programs-step:scratch-cli
@@ -344,7 +344,7 @@ services:
           mkdir -p /go/src/github.com/smallstep
           cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/cli.git
         BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/github.com/smallstep/bin/step /tmp/step/usr/bin/step
+        POST_BUILD_CMD: mv /go/src/github.com/smallstep/cli/bin/step /tmp/step/usr/bin/step
         BINARY_NAME: step
         FINAL_BASE: alpine
     image: kristianfoss/programs-step:alpine-cli
@@ -643,7 +643,6 @@ services:
     build:
       <<: *staticBuilder
       args:
-        FINAL_BASE: alpine
         USER: user
         BUILD_IMAGE: golang:1.14.4-alpine
         BUILD_PKGS: ack
@@ -660,7 +659,8 @@ services:
           mkdir -p /src/docker
           export DOCKER_VERSION=$$(wget -O - -q https://download.docker.com/linux/static/stable/x86_64/ | ack -o '(?<=>docker-)\d{2}\.\d{2}\.\d{1}' | tail -1)
           echo "Getting Docker $$DOCKER_VERSION"
-          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1 \
+          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1
+        FINAL_BASE: alpine
     image: kristianfoss/programs-docker:docker-alpine
 
   # Docker CLI with a `FROM alpine` final base image
@@ -668,7 +668,6 @@ services:
     build:
       <<: *staticBuilder
       args:
-        FINAL_BASE: scratch
         USER: user
         BUILD_IMAGE: golang:1.14.4-alpine
         BUILD_PKGS: ack
@@ -685,7 +684,8 @@ services:
           mkdir -p /src/docker
           export DOCKER_VERSION=$$(wget -O - -q https://download.docker.com/linux/static/stable/x86_64/ | ack -o '(?<=>docker-)\d{2}\.\d{2}\.\d{1}' | tail -1)
           echo "Getting Docker $$DOCKER_VERSION"
-          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1 \
+          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1
+        FINAL_BASE: scratch
     image: kristianfoss/programs-docker:docker-scratch
 
   # Rootless DockerD with a `FROM alpine` final base image
@@ -752,20 +752,19 @@ services:
   #     args:
   #       FINAL_BASE: alpine
   #       BUILD_IMAGE: alpine
-  #       BUILD_PKGS: curl ack python3
+  #       BUILD_PKGS: curl ack python3 cmake linux-headers
   #       BUILD_PATH: /src/mono
   #       FETCH_CMD: |
   #         mkdir -p /src/mono
   #         export MONO_VERSION=$$(wget -O - -q https://download.mono-project.com/sources/mono/ | ack -o '(?<=>mono-)\d{1}\.\d{1}\.\d{1}\.\d{3}' | tail -1)
   #         echo "Getting Mono Version $${MONO_VERSION}"
   #         wget -O - https://download.mono-project.com/sources/mono/mono-$${MONO_VERSION}.tar.xz | tar xJ -C /src/mono --strip-components=1
-  #         wget -O /tmp/mono/python3.patch https://git.alpinelinux.org/aports/plain/testing/mono/python3.patch
+  #         wget -O /src/mono/python3.patch https://git.alpinelinux.org/aports/plain/testing/mono/python3.patch
   #       BUILD_CMD: |
   #         patch -p1 -i ./python3.patch
-  #         ./autogen.sh --prefix=/usr --disable-dependency-tracking --enable-parallel-mark --with-mcs-docs=no --without-sigaltstack --disable-boehm --disable-crash-reporting  --enable-silent-rules --with-gnu-ld
+  #         ./configure --prefix=/usr --disable-dependency-tracking --enable-parallel-mark --with-mcs-docs=no --without-sigaltstack --disable-boehm --disable-crash-reporting  --enable-silent-rules --with-gnu-ld
   #         make
   #         make -j1 DESTDIR="/tmp/mono" install
-
   #       POST_BUILD_CMD: |
   #         ls -lah /tmp
   #       BINARY_NAME: mono
