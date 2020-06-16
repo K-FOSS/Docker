@@ -18,41 +18,39 @@ x-netboxBase: &netboxBase
   restart: unless-stopped
   environment:
     CORS_ORIGIN_ALLOW_ALL: 'true'
-    DB_NAME: 'netbox'
-    DB_USER: 'netbox'
-    DB_HOST: 'netboxdatabase'
-    REDIS_HOST: 'netboxredis'
+    DB_NAME: netbox
+    DB_USER: netbox
+    DB_HOST: netboxdatabase
+    REDIS_HOST: netboxredis
     REDIS_SSL: 'false'
-    REDIS_DATABASE: '0'
-    REDIS_CACHE_HOST: 'netboxRedisCache'
-    REDIS_CACHE_DATABASE: '0'
+    REDIS_DATABASE: 0
+    REDIS_CACHE_HOST: netboxRedisCache
+    REDIS_CACHE_DATABASE: 0
     REDIS_CACHE_SSL: 'false'
 
 services:
   Web:
-    image: hectormolinero/caddy2:v17-amd64
+    image: caddy/caddy:scratch
     restart: unless-stopped
-    command: ['run', '--config', '/etc/Caddy/Caddyfile.json']
+    command: ['caddy', 'run', '--config', '/etc/Caddy/Caddyfile.json']
     volumes:
       - ./Caddyfile.json:/etc/Caddy/Caddyfile.json:ro
-      - tlsCertificates:/TLS:ro
       - type: volume
         source: netboxStatic
         target: /var/www/netbox/static
         read_only: true
         volume:
           nocopy: true
-    depends_on:
-      - SubscriberDL
+    networks:
+      - publicWeb
     ports:
       - 80:8080
       - 443:8443/tcp
       - 443:8443/udp
-    networks:
-      - publicWeb
+    depends_on:
+      - SubscriberDL
     labels:
       com.ouroboros.enable: 'true'
-      com.distributed-dns.web: 'true'
 
   # Repo: https://github.com/pyouroboros/ouroboros
   Ouroboros:
@@ -72,25 +70,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - $HOME/.docker/config.json:/root/.docker/config.json:ro
 
-  SubscriberDL:
-    image: docker.pkg.github.com/kristianfjones/distributed-dns/distributed-dns-subscriberdl
-    restart: unless-stopped
-    env_file: ENVs/SubscriberDL.env
-    environment:
-      API_URL: 'https://dns.kristianjones.dev'
-    volumes:
-      - tlsCertificates:/data/TLS
-      - /var/run/docker.sock:/var/run/docker.sock
-    labels:
-      com.ouroboros.enable: 'true'
-
   netboxApp:
     <<: *netboxBase
     env_file: ENVs/Netbox.env
-    depends_on:
-      - netboxDatabase
-      - netboxRedis
-      - netboxWorker
     networks:
       - publicWeb
       - netboxDatabase
@@ -102,16 +84,20 @@ services:
         volume:
           nocopy: false
       - netboxMedia:/opt/netbox/netbox/media
+    depends_on:
+      - netboxDatabase
+      - netboxRedis
+      - netboxWorker
 
   netboxWorker:
     <<: *netboxBase
     entrypoint: ['python3', '/opt/netbox/netbox/manage.py']
     command: ['rqworker']
     env_file: ENVs/Netbox.env
-    depends_on:
+    networks:
       - netboxDatabase
       - netboxRedis
-    networks:
+    depends_on:
       - netboxDatabase
       - netboxRedis
 
@@ -120,12 +106,12 @@ services:
     restart: unless-stopped
     env_file: ENVs/Database.env
     environment:
-      POSTGRES_USER: 'netbox'
-      POSTGRES_DB: 'netbox'
-    networks:
-      - netboxDatabase
+      POSTGRES_USER: netbox
+      POSTGRES_DB: netbox
     volumes:
       - netboxDatabaseData:/var/lib/postgresql/data
+    networks:
+      - netboxDatabase
 
   netboxRedis:
     image: redis:5-alpine
@@ -135,10 +121,10 @@ services:
       - -c # this is to evaluate the $REDIS_PASSWORD from the env
       - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
     env_file: ENVs/Redis.env
-    networks:
-      - netboxRedis
     volumes:
       - netboxRedisData:/data
+    networks:
+      - netboxRedis
 
   netboxRedisCache:
     image: redis:5-alpine
@@ -147,6 +133,6 @@ services:
       - sh
       - -c # this is to evaluate the $REDIS_PASSWORD from the env
       - redis-server --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
+    env_file: ENVs/Redis.env
     networks:
       - netboxRedis
-    env_file: ENVs/Redis.env

@@ -6,7 +6,6 @@ networks:
 
 volumes:
   cabotDB:
-  tlsCertificates:
 
 services:
   Web:
@@ -14,17 +13,13 @@ services:
     restart: unless-stopped
     command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
     volumes:
-      - ./Caddyfile.json:/etc/caddy/Caddyfile.json
-      - tlsCertificates:/TLS:ro
-    ports:
-      - 80:8080
-      - 443:8443/tcp
-      - 443:8443/udp
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
     networks:
       - publicWeb
+    ports:
+      - 8080:8080
     labels:
       com.ouroboros.enable: 'true'
-      com.distributed-dns.web: 'true'
 
   # Script that checks for updates to docker containers and recreates an identical container with new image if there is an update.
   #
@@ -39,19 +34,30 @@ services:
     env_file: ENVs/Ouroboros.env
     environment:
       CLEANUP: 'true'
-      LOG_LEVEL: 'error'
+      LOG_LEVEL: error
       SELF_UPDATE: 'true'
       LABEL_ENABLE: 'true'
       LABELS_ONLY: 'true'
-      TZ: 'America/Winnipeg'
+      TZ: America/Winnipeg
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - $HOME/.docker/config.json:/root/.docker/config.json:ro
+
+  #
+  # Jitsi Web Interface
+  #
 
   jitsiWeb:
     image: jitsi/web
     restart: unless-stopped
     env_file: ENVs/Jitsi.env
+    environment:
+      ENABLE_AUTH: 0
+      ENABLE_GUESTS: 1
+      ENABLE_LETSENCRYPT: 0
+      ENABLE_HTTP_REDIRECT: 0
+      ENABLE_TRANSCRIPTIONS: 0
+      DISABLE_HTTPS: 1
     volumes:
       - jitsiWebConfig:/config
     networks:
@@ -59,16 +65,12 @@ services:
         aliases:
           - meet.jitsi
       publicWeb:
-    environment:
-      ENABLE_AUTH: '0'
-      ENABLE_GUESTS: '1'
-      ENABLE_LETSENCRYPT: '0'
-      ENABLE_HTTP_REDIRECT: '0'
-      ENABLE_TRANSCRIPTIONS: '0'
-      DISABLE_HTTPS: '1'
     labels:
       com.ouroboros.enable: 'true'
 
+  #
+  # Jitsi Etherpad Whiteboard
+  #
   jitsiEtherpad:
     image: jitsi/etherpad
     restart: unless-stopped
@@ -78,7 +80,7 @@ services:
         aliases:
           - etherpad.meet.jitsi
 
-    # XMPP server
+  # XMPP server
   jitsiProsody:
     image: jitsi/prosody
     restart: unless-stopped
@@ -116,7 +118,7 @@ services:
     restart: unless-stopped
     env_file: ENVs/Jitsi.env
     networks:
-      jitsiMeet:
+      - jitsiMeet
     ports:
       - 20000-20050:20000-20050/udp
     depends_on:

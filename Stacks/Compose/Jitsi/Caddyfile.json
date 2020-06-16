@@ -8,34 +8,25 @@
       "https_port": 8443,
       "servers": {
         "example.com": {
-          "listen": [":8443"],
+          "listen": [":8080"],
+
+          "automatic_https": {
+            "disable": true
+          },
+
           "routes": [
             {
               "match": [
                 {
-                  "host": ["*.example.com"]
+                  "host": ["meet.example.com"]
                 }
               ],
               "handle": [
                 {
-                  "handler": "subroute",
-                  "routes": [
+                  "handler": "reverse_proxy",
+                  "upstreams": [
                     {
-                      "match": [
-                        {
-                          "host": ["meet.example.com"]
-                        }
-                      ],
-                      "handle": [
-                        {
-                          "handler": "reverse_proxy",
-                          "upstreams": [
-                            {
-                              "dial": "jitsiWeb:80"
-                            }
-                          ]
-                        }
-                      ]
+                      "dial": "jitsiWeb:80"
                     }
                   ]
                 }
@@ -45,10 +36,6 @@
         }
       }
     },
-    "tls": {
-      "certificates": {
-        "load_folders": ["/TLS"]
-      }
-    }
+    "tls": {}
   }
 }

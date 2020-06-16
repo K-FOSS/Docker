@@ -15,9 +15,11 @@ services:
     command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
     volumes:
       - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
+    networks:
+      - publicWeb
     ports:
-      - target: 80
-        published: 80
+      - target: 8080
+        published: 8080
         protocol: tcp
         mode: host
       - target: 443
@@ -28,8 +30,6 @@ services:
         published: 443
         protocol: udp
         mode: host
-    networks:
-      - publicWeb
 
   Teleport:
     image: kristianfoss/programs-teleport:alpine-teleport
@@ -44,12 +44,12 @@ services:
     volumes:
       - ./Teleport.yaml:/etc/Teleport.yaml:ro
       - teleportData:/var/lib/teleport
+    networks:
+      - publicWeb
     ports:
       - 3080:3080
       - 3023:3023
       - 3025:3025
-    networks:
-      - publicWeb
 
   TeleportProxy:
     image: kristianfoss/programs-teleport:alpine-teleport

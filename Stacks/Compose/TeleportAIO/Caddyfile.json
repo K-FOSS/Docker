@@ -4,11 +4,11 @@
   },
   "apps": {
     "http": {
-      "http_port": 80,
-      "https_port": 443,
+      "http_port": 8080,
+      "https_port": 8443,
       "servers": {
         "example.com": {
-          "listen": [":80"],
+          "listen": [":8080"],
           "automatic_https": {
             "disable": true
           },
@@ -17,7 +17,7 @@
             {
               "match": [
                 {
-                  "host": ["teleport.kristianjones.dev"]
+                  "host": ["teleport.example.com"]
                 }
               ],
               "handle": [
@@ -34,7 +34,7 @@
             {
               "match": [
                 {
-                  "host": ["proxy.kristianjones.dev"]
+                  "host": ["proxy.example.com"]
                 }
               ],
               "handle": [
@@ -51,33 +51,7 @@
             {
               "match": [
                 {
-                  "host": ["ssh.kristianjones.dev"]
-                }
-              ],
-              "handle": [
-                {
-                  "handler": "subroute",
-                  "routes": [
-                    {
-                      "handle": [
-                        {
-                          "handler": "reverse_proxy",
-                          "upstreams": [
-                            {
-                              "dial": "Teleport:3023"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "match": [
-                {
-                  "host": ["tunnel.kristianjones.dev"]
+                  "host": ["tunnel.example.com"]
                 }
               ],
               "handle": [
@@ -94,7 +68,7 @@
             {
               "match": [
                 {
-                  "host": ["auth.kristianjones.dev"]
+                  "host": ["auth.example.com"]
                 }
               ],
               "handle": [

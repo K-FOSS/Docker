@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.8'
 
 networks:
   publicWeb:
@@ -6,7 +6,6 @@ networks:
 
 volumes:
   cabotDB:
-  tlsCertificates:
 
 services:
   Web:
@@ -14,17 +13,13 @@ services:
     restart: unless-stopped
     command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
     volumes:
-      - ./Caddyfile.json:/etc/caddy/Caddyfile.json
-      - tlsCertificates:/TLS:ro
-    ports:
-      - 80:8080
-      - 443:8443/tcp
-      - 443:8443/udp
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
     networks:
       - publicWeb
+    ports:
+      - 8080:8080
     labels:
       com.ouroboros.enable: 'true'
-      com.distributed-dns.web: 'true'
 
   # Script that checks for updates to docker containers and recreates an identical container with new image if there is an update.
   #
@@ -34,16 +29,14 @@ services:
   Ouroboros:
     image: pyouroboros/ouroboros
     restart: unless-stopped
-    container_name: ouroboros
-    hostname: ouroboros
     env_file: ENVs/Ouroboros.env
     environment:
       CLEANUP: 'true'
-      LOG_LEVEL: 'error'
+      LOG_LEVEL: error
       SELF_UPDATE: 'true'
       LABEL_ENABLE: 'true'
       LABELS_ONLY: 'true'
-      TZ: 'America/Winnipeg'
+      TZ: America/Winnipeg
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - $HOME/.docker/config.json:/root/.docker/config.json:ro
@@ -52,21 +45,26 @@ services:
   cabotWeb:
     image: cabotapp/cabot
     restart: unless-stopped
-    command: sh -c "cabot migrate && gunicorn cabot.wsgi:application -b 0.0.0.0:5000 --workers=5"
+    command:
+      [
+        'sh',
+        '-c',
+        'cabot migrate && gunicorn cabot.wsgi:application -b 0.0.0.0:5000 --workers=5',
+      ]
     env_file: ENVs/Cabot.env
-    depends_on:
-      - cabotDB
-      - cabotRabbitMQ
     networks:
       - cabotInternal
       - publicWeb
+    depends_on:
+      - cabotDB
+      - cabotRabbitMQ
     labels:
       com.ouroboros.enable: 'true'
 
   catbotWorker:
     image: cabotapp/cabot
     restart: unless-stopped
-    command: celery worker -A cabot
+    command: ['celery', 'worker', '-A cabot']
     env_file: ENVs/Cabot.env
     networks:
       - cabotInternal
@@ -80,7 +78,7 @@ services:
   catbotBeat:
     image: cabotapp/cabot
     restart: unless-stopped
-    command: celery beat -A cabot
+    command: ['celery', 'beat', '-A cabot']
     env_file: ENVs/Cabot.env
     networks:
       - cabotInternal

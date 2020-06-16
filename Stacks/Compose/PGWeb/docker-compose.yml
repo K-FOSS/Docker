@@ -1,6 +1,6 @@
 version: '3.8'
 
-networks: 
+networks:
   publicWeb:
   internalDatabase:
 
@@ -11,33 +11,33 @@ services:
   Web:
     image: caddy/caddy:scratch
     restart: unless-stopped
-    command: ['run', '--config', '/etc/caddy/Caddyfile.json']
-    networks: 
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
+    networks:
       - publicWeb
-    ports: 
+    ports:
       - 8080:8080
-    volumes: 
+    volumes:
       - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
 
   pgWeb:
     image: kristianfoss/programs-pgweb:scratch
     restart: unless-stopped
     command: ['--bind=0.0.0.0', '--listen=8080']
-    depends_on: 
+    depends_on:
       - database
-    environment: 
+    environment:
       DATABASE_URL: 'postgres://postgres:pgpass@database:5432/demo_data?sslmode=disable'
-    networks: 
+    networks:
       - publicWeb
       - internalDatabase
 
   database:
     image: postgres:alpine
     restart: unless-stopped
-    environment: 
+    environment:
       POSTGRES_PASSWORD: pgpass
       POSTGRES_DB: demo_data
-    networks: 
-      - internalDatabase 
-    volumes: 
+    networks:
+      - internalDatabase
+    volumes:
       - databaseData:/var/lib/postgresql/data

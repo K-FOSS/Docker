@@ -7,49 +7,26 @@
       "http_port": 8080,
       "https_port": 8443,
       "servers": {
-        "kristianjones.dev": {
-          "listen": [":8443"],
+        "example.com": {
+          "listen": [":8080"],
+
+          "automatic_https": {
+            "disable": true
+          },
+
           "routes": [
             {
               "match": [
                 {
-                  "host": ["*.kristianjones.dev"]
+                  "host": ["cabot.example.com"]
                 }
               ],
               "handle": [
                 {
-                  "handler": "subroute",
-                  "routes": [
+                  "handler": "reverse_proxy",
+                  "upstreams": [
                     {
-                      "match": [
-                        {
-                          "host": ["cabot.kristianjones.dev"]
-                        }
-                      ],
-                      "handle": [
-                        {
-                          "handler": "subroute",
-                          "routes": [
-                            {
-                              "match": [
-                                {
-                                  "path": ["*"]
-                                }
-                              ],
-                              "handle": [
-                                {
-                                  "handler": "reverse_proxy",
-                                  "upstreams": [
-                                    {
-                                      "dial": "cabotWeb:5000"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
+                      "dial": "cabotWeb:5000"
                     }
                   ]
                 }
@@ -58,11 +35,7 @@
           ]
         }
       }
-    },
-    "tls": {
-      "certificates": {
-        "load_folders": ["/TLS"]
-      }
     }
-  }
+  },
+  "tls": {}
 }

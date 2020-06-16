@@ -8,19 +8,17 @@
       "https_port": 8443,
       "servers": {
         "example.com": {
-          "listen": [
-            ":8080"
-          ],
+          "listen": [":8080"],
+
           "automatic_https": {
             "disable": true
           },
+
           "routes": [
             {
               "match": [
                 {
-                  "host": [
-                    "localhost.example.com"
-                  ]
+                  "host": ["c2.example.com"]
                 }
               ],
               "handle": [
