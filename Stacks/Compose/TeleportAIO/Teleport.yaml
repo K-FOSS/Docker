@@ -1,0 +1,219 @@
+#
+# Sample Teleport configuration file
+# Creates a single proxy, auth and node server.
+#
+# Things to update:
+#  1. ca_pin: Obtain the CA pin hash for joining more nodes by running 'tctl status'
+#     on the auth server once Teleport is running.
+#  2. license-if-using-teleport-enterprise.pem: If you are an Enterprise customer,
+#     obtain this from https://dashboard.gravitational.com/web/
+#
+teleport:
+  # nodename allows to assign an alternative name this node can be reached by.
+  # by default it's equal to hostname
+  nodename: Core
+
+  # Data directory where Teleport daemon keeps its data.
+  # See "Filesystem Layout" section above for more details.
+  data_dir: /var/lib/teleport
+
+  # Invitation token used to join a cluster. it is not used on
+  # subsequent starts
+  # auth_token: 8081659ea61eebe1d9587e28b62201e8dad7f0db1e7fc21e
+
+  # list of auth servers in a cluster. you will have more than one auth server
+  # if you configure teleport auth to run in HA configuration.
+  # If adding a node located behind NAT, use the Proxy URL. e.g.
+  # auth_servers:
+  #   - teleport.kristianjones.dev
+
+  # When running in multi-homed or NATed environments Teleport nodes need
+  # to know which IP it will be reachable at by other nodes
+  #
+  # This value can be specified as FQDN e.g. host.example.com
+  advertise_ip: Teleport
+
+  # Teleport throttles all connections to avoid abuse. These settings allow
+  # you to adjust the default limits
+  connection_limits:
+    max_connections: 1000
+    max_users: 250
+
+  # Logging configuration. Possible output values to disk via '/var/lib/teleport/teleport.log',
+  # 'stdout', 'stderr' and 'syslog'. Possible severity values are INFO, WARN
+  # and ERROR (default).
+  log:
+    output: stderr
+    severity: DEBUG
+
+# This section configures the 'auth service':
+auth_service:
+  # Turns 'auth' role on. Default is 'yes'
+  enabled: yes
+
+  authentication:
+    # default authentication type. possible values are 'local' and 'github' for OSS
+    #  and 'oidc', and 'saml' for Enterprise.
+    #  To support FedRAMP / FIPS, local_auth needs to be turned off by setting it to 'false' and a SSO
+    #  connector is required to log into Teleport, see
+    #  https://gravitational.com/teleport/docs/enterprise/ssh_fips#teleport-auth-server
+    #  only local authentication (Teleport's own user DB) & Github is supported in the open
+    #  source version
+    type: local
+    # second_factor can be off, otp, or u2f
+    second_factor: off
+    # # u2f section is required if second_factor is set to 'u2f'
+    # u2f:
+    #   # app_id must point to the URL of the Teleport Web UI (proxy) accessible
+    #   # by the end users
+    #   app_id: https://localhost:3080
+    #   # facets must list all proxy servers if there are more than one deployed
+    #   facets:
+    #     - https://localhost:3080
+
+  cluster_name: Core
+
+  # IP and the port to bind to. Other Teleport nodes will be connecting to
+  # this port (AKA "Auth API" or "Cluster API") to validate client
+  # certificates
+  listen_addr: 0.0.0.0:3025
+
+  # The optional DNS name the auth server if located behind a load balancer.
+  # (see public_addr section below)
+  # public_addr: teleport.kristianjones.dev:443
+
+  # Pre-defined tokens for adding new nodes to a cluster. Each token specifies
+  # the role a new node will be allowed to assume. The more secure way to
+  # add nodes is to use `ttl node add --ttl` command to generate auto-expiring
+  # tokens.
+  #
+  # We recommend to use tools like `pwgen` to generate sufficiently random
+  # tokens of 32+ byte length.
+  tokens:
+    - 'node,auth,proxy:foo'
+    - 'trustedcluster:bar'
+
+  # Optional setting for configuring session recording. Possible values are:
+  #    "node"  : sessions will be recorded on the node level  (the default)
+  #    "proxy" : recording on the proxy level, see "recording proxy mode" section.
+  #    "off"   : session recording is turned off
+  session_recording: 'node'
+
+  # This setting determines if a Teleport proxy performs strict host key checks.
+  # Only applicable if session_recording=proxy, see "recording proxy mode" for details.
+  #proxy_checks_host_keys: yes
+  # Determines if SSH sessions to cluster nodes are forcefully terminated
+  # after no activity from a client (idle client).
+  # Examples: "30m", "1h" or "1h30m"
+  # client_idle_timeout: never
+  # Determines if the clients will be forcefully disconnected when their
+  # certificates expire in the middle of an active SSH session. (default is 'no')
+  # disconnect_expired_cert: no
+  # Determines the interval at which Teleport will send keep-alive messages.
+  # keep_alive_count_max is the number of missed keep-alive messages before
+  # the server tears down the connection to the client.
+  # keep_alive_interval: 5m
+  # keep_alive_count_max: 3
+  # License file to start auth server with. Note that this setting is ignored
+  # in open-source Teleport and is required only for Teleport Pro, Business
+  # and Enterprise subscription plans.
+  #
+  # The path can be either absolute or relative to the configured `data_dir`
+  # and should point to the license file obtained from Teleport Download Portal.
+  #
+  # If not set, by default Teleport will look for the `license.pem` file in
+  # the configured `data_dir` .
+  # license_file: /var/lib/teleport/license.pem
+
+ssh_service:
+  # Turns 'ssh' role on. Default is 'yes'
+  enabled: no
+
+  # IP and the port for SSH service to bind to.
+  listen_addr: 0.0.0.0:3022
+
+  public_addr: ['192.168.254.103']
+
+  # The optional public address the SSH service. This is useful if administrators
+  # want to allow users to connect to nodes directly, bypassing a Teleport proxy
+  # (see public_addr section below)
+  # public_addr: ssh.kristianjones.dev
+
+  # See explanation of labels in "Labeling Nodes" section below
+  labels:
+    cluster: Core
+
+  # # List of the commands to periodically execute. Their output will be used as node labels.
+  # # See "Labeling Nodes" section below for more information and more examples.
+  # commands:
+  #   - name: hostname
+  #     command: [/usr/bin/hostname]
+  #     period: 1m0s
+  #   - name: arch
+  #     command: [/usr/bin/uname, -p]
+  #     period: 1h0m0s
+
+  # enables reading ~/.tsh/environment before creating a session. by default
+  # set to false, can be set true here or as a command line flag.
+  permit_user_env: false
+
+  # Enhanced Session Recording was introduced with Teleport 4.2. For more details
+  # see
+  enhanced_recording:
+    # Enable or disable enhanced auditing for this node. Default value:
+    # false.
+    enabled: false
+
+    # command_buffer_size is optional with a default value of 8 pages.
+    command_buffer_size: 8
+
+    # disk_buffer_size is optional with default value of 128 pages.
+    disk_buffer_size: 128
+
+    # network_buffer_size is optional with default value of 8 pages.
+    network_buffer_size: 8
+
+    # Controls where cgroupv2 hierarchy is mounted. Default value:
+    # /cgroup2.
+    cgroup_path: /cgroup2
+
+  # configures PAM integration. see below for more details.
+  #pam:
+  #  enabled: no
+  #  service_name: teleport
+
+# This section configures the 'proxy service'
+proxy_service:
+  # Turns 'proxy' role on. Default is 'yes'
+  enabled: yes
+
+  public_addr: ['teleport.kristianjones.dev:443']
+  # # SSH forwarding/proxy address. Command line (CLI) clients always begin their
+  # # SSH sessions by connecting to this port
+  # listen_addr: 0.0.0.0:3023
+  # web_listen_addr: 0.0.0.0:3080
+  # # Reverse tunnel listening address. An auth server (CA) can establish an
+  # # outbound (from behind the firewall) connection to this address.
+  # # This will allow users of the outside CA to connect to behind-the-firewall
+  # # nodes.
+  # tunnel_listen_addr: 0.0.0.0:3024
+  # # The HTTPS listen address to serve the Web UI and also to authenticate the
+  # # command line (CLI) users via password+HOTP
+  # # The DNS name of the proxy HTTPS endpoint as accessible by cluster users,
+  # # cluster clients, trusted clusters and nodes joining the cluster via
+  # # Teleport IoT/node tunneling.
+  # # Defaults to the proxy's hostname if not specified. If running multiple
+  # # proxies behind a load balancer, this name must point to the load balancer
+  # # (see public_addr section below)
+  # public_addr: teleport.kristianjones.dev:443
+  # # The DNS name of the proxy SSH endpoint as accessible by cluster clients.
+  # # Defaults to the proxy's hostname if not specified. If running multiple proxies
+  # # behind a load balancer, this name must point to the load balancer.
+  # # Use a TCP load balancer because this port uses SSH protocol.
+  # ssh_public_addr: ssh.kristianjones.dev:443
+  # # The DNS name of the tunnel SSH endpoint as accessible by trusted clusters and
+  # # nodes joining the cluster via Teleport IoT/node tunneling.
+  # # Defaults to the proxy's hostname if not specified. If running multiple proxies
+  # # behind a load balancer, this name must point to the load balancer.
+  # # Use a TCP load balancer because this port uses SSH protocol.
+  # tunnel_public_addr: tunnel.kristianjones.dev:443
