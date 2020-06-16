@@ -1,4 +1,4 @@
-CLI_IMAGE="node:alpine3.11"
+CLI_IMAGE="node:alpine"
 
 CLI_NAME="node-cli"
 

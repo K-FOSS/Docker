@@ -1,4 +1,4 @@
-ARG ALPINE='alpine:3.11'
+ARG ALPINE='alpine'
 
 ## Build
 ARG BUILD_SETUP=''

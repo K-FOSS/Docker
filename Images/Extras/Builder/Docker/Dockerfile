@@ -1,4 +1,4 @@
-ARG ALPINE='alpine:3.11'
+ARG ALPINE='alpine'
 
 FROM ${ALPINE} as prepare
 RUN apk add --no-cache ack binutils ca-certificates

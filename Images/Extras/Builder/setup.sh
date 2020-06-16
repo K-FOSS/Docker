@@ -1,6 +1,6 @@
 #!/bin/sh
 VOLUME_NAME="docker-socket"
-ALPINE="alpine:3.11"
+ALPINE="alpine"
 
 if [ ! "$(docker volume ls -q -f name=${VOLUME_NAME})" ]; then
   echo "Socket volume does not already exists. Creating now"

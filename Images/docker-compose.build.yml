@@ -396,8 +396,8 @@ services:
   #   build:
   #     <<: *gitStaticBuilder
   #     args:
-  #       FINAL_BASE: 'alpine:3.11'
-  #       BUILD_IMAGE: 'node:10-alpine3.11'
+  #       FINAL_BASE: 'alpine'
+  #       BUILD_IMAGE: 'node:10-alpine'
   #       BUILD_PKGS: 'bash git yarn go'
   #       BUILD_PATH: /go/src/vault
   #       # make dev
@@ -637,6 +637,56 @@ services:
   # Website: https://docker.com
   #
 
+  # Docker CLI with a `FROM alpine` final base image
+  dockerAlpine:
+    build:
+      <<: *staticBuilder
+      args:
+        FINAL_BASE: alpine
+        USER: user
+        BUILD_IMAGE: golang:1.14.4-alpine
+        BUILD_PKGS: ack
+        BUILD_PATH: /src/docker
+        POST_BUILD_CMD: |
+          mkdir -p /tmp/docker/usr/bin
+          mv /src/docker/docker /tmp/docker/usr/bin/
+        POST_CMD: |
+          echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" > /tmp/docker/etc/passwd
+        BINARY_NAME: docker
+        BUILD_CMD: |
+          strip /src/docker/*
+        FETCH_CMD: |
+          mkdir -p /src/docker
+          export DOCKER_VERSION=$$(wget -O - -q https://download.docker.com/linux/static/stable/x86_64/ | ack -o '(?<=>docker-)\d{2}\.\d{2}\.\d{1}' | tail -1)
+          echo "Getting Docker $$DOCKER_VERSION"
+          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1 \
+    image: kristianfoss/programs-docker:docker-alpine
+
+  # Docker CLI with a `FROM alpine` final base image
+  dockerScratch:
+    build:
+      <<: *staticBuilder
+      args:
+        FINAL_BASE: scratch
+        USER: user
+        BUILD_IMAGE: golang:1.14.4-alpine
+        BUILD_PKGS: ack
+        BUILD_PATH: /src/docker
+        POST_BUILD_CMD: |
+          mkdir -p /tmp/docker/usr/bin
+          mv /src/docker/docker /tmp/docker/usr/bin/
+        POST_CMD: |
+          echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" > /tmp/docker/etc/passwd
+        BINARY_NAME: docker
+        BUILD_CMD: |
+          strip /src/docker/*
+        FETCH_CMD: |
+          mkdir -p /src/docker
+          export DOCKER_VERSION=$$(wget -O - -q https://download.docker.com/linux/static/stable/x86_64/ | ack -o '(?<=>docker-)\d{2}\.\d{2}\.\d{1}' | tail -1)
+          echo "Getting Docker $$DOCKER_VERSION"
+          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1 \
+    image: kristianfoss/programs-docker:docker-scratch
+
   # Rootless DockerD with a `FROM alpine` final base image
   rootlesesDockerDAlpine:
     build:
@@ -644,6 +694,9 @@ services:
       args:
         CLI_NAME: dockerd
         FINAL_BASE: kristianfoss/programs-rootlesskit:rootless-alpine
+    depends_on:
+      - rootlesesKitScratch
+      - iproute2SourceScratch
     image: kristianfoss/programs-docker:dockerd-rootless-alpine
 
   rootlesesDockerDScratch:
@@ -682,6 +735,40 @@ services:
           ln -s /lib/ld-musl-x86_64.so.1 /tmp/cloud_c2/lib64/ld-linux-x86-64.so.2
         BINARY_NAME: cloud_c2
     image: kristianfoss/programs-cloudc2:alpine
+
+  #
+  # Mono
+  #
+  # Website: https://www.mono-project.com/
+  # GitHub: https://github.com/mono/mono
+  # Docs: https://www.mono-project.com/docs/
+  #
+
+  # Mono CLI with a 'FROM alpine' final base image
+  monoAlpine:
+    build:
+      <<: *staticBuilder
+      args:
+        FINAL_BASE: alpine
+        BUILD_IMAGE: alpine
+        BUILD_PKGS: curl ack python3
+        BUILD_PATH: /src/mono
+        FETCH_CMD: |
+          mkdir -p /src/mono
+          export MONO_VERSION=$$(wget -O - -q https://download.mono-project.com/sources/mono/ | ack -o '(?<=>mono-)\d{1}\.\d{1}\.\d{1}\.\d{3}' | tail -1)
+          echo "Getting Mono Version $${MONO_VERSION}"
+          wget -O - https://download.mono-project.com/sources/mono/mono-$${MONO_VERSION}.tar.xz | tar xJ -C /src/mono --strip-components=1
+          wget -O /tmp/mono/python3.patch https://git.alpinelinux.org/aports/plain/testing/mono/python3.patch
+        BUILD_CMD: |
+          patch -p1 -i ./python3.patch
+          ./autogen.sh --prefix=/usr --disable-dependency-tracking --enable-parallel-mark --with-mcs-docs=no --without-sigaltstack --disable-boehm --disable-crash-reporting  --enable-silent-rules --with-gnu-ld
+          make
+          make -j1 DESTDIR="/tmp/mono" install
+
+        POST_BUILD_CMD: |
+          ls -lah /tmp
+        BINARY_NAME: mono
+    image: kristianfoss/programs-mono:cli-alpine
 
   ##
   ## SOURCE Images
@@ -731,13 +818,13 @@ services:
   #   build:
   #     <<: *gitStaticBuilder
   #     args:
-  #       BUILD_IMAGE: 'alpine:3.11'
+  #       BUILD_IMAGE: 'alpine'
   #       BUILD_PKGS: 'python3-dev build-base perl zlib-dev gnutls-dev'
   #       BUILD_SETUP: './bootstrap.sh'
   #       BUILD_CONFIGURE: './configure '
   #       POST_BUILD_CMD: 'mv /tmp/src/mtr/mtr /tmp/src/mtr/mtr-packet /tmp/mtr/usr/bin/'
   #       BINARY_NAME: smaba
-  #       FINAL_BASE: 'alpine:3.11'
+  #       FINAL_BASE: 'alpine'
   #       GIT_REPO: https://github.com/samba-team/samba.git
   #       GIT_BRANCH: master
   #       BUILD_PATH: /tmp/src/
@@ -812,13 +899,6 @@ services:
   #     context: ./Mono
   #   image: kristianfoss/programs-mono:scratch
 
-  # sonarrScratch:
-  #   build:
-  #     context: ./TMP/Sonarr
-  #   depends_on:
-  #     - monoScratch
-  #   image: kristianfoss/programs-sonarr:scratch
-
   sshagentScratch:
     build:
       <<: *opensshBuilder
@@ -840,47 +920,41 @@ services:
       args:
         CLI_NAME: 'ssh-keygen'
     image: kristianfoss/programs-openssh:scratch-ssh-keygen
-
   # pritunlWeb:
   #   image: kristianfoss/lab/pritunl-web
   #   build:
   #     context: ./Pritunl
   #     target: pritunl-web
-
   # gcloudAlpine:
   #   build:
   #     context: ./TMP/GCloud
   #   image: kristianfoss/programs-gcloud:alpine
-
-  dockerScratch:
-    build:
-      <<: *dockerCLIBuilder
-      args:
-        CLI_NAME: 'docker'
-    image: kristianfoss/programs-docker:scratch-docker
-
-  dockerAlpine:
-    build:
-      <<: *dockerCLIBuilder
-      args:
-        FINAL_BASE: 'alpine'
-        CLI_NAME: 'docker'
-    image: kristianfoss/programs-docker:alpine-docker
-
-  dockerdScratch:
-    build:
-      <<: *dockerCLIBuilder
-      args:
-        CLI_NAME: 'dockerd'
-    image: kristianfoss/programs-docker:scratch-dockerd
-
-  dockerdAlpine:
-    build:
-      <<: *dockerCLIBuilder
-      args:
-        FINAL_BASE: 'alpine'
-        CLI_NAME: 'dockerd'
-    image: kristianfoss/programs-docker:alpine-dockerd
+  # dockerScratch:
+  #   build:
+  #     <<: *dockerCLIBuilder
+  #     args:
+  #       CLI_NAME: 'docker'
+  #   image: kristianfoss/programs-docker:scratch-docker
+  # dockerAlpine:
+  #   build:
+  #     <<: *dockerCLIBuilder
+  #     args:
+  #       FINAL_BASE: 'alpine'
+  #       CLI_NAME: 'docker'
+  #   image: kristianfoss/programs-docker:alpine-docker
+  # dockerdScratch:
+  #   build:
+  #     <<: *dockerCLIBuilder
+  #     args:
+  #       CLI_NAME: 'dockerd'
+  #   image: kristianfoss/programs-docker:scratch-dockerd
+  # dockerdAlpine:
+  #   build:
+  #     <<: *dockerCLIBuilder
+  #     args:
+  #       FINAL_BASE: 'alpine'
+  #       CLI_NAME: 'dockerd'
+  #   image: kristianfoss/programs-docker:alpine-dockerd
   # codeServer:
   #   build:
   #     context: ./TMP/Code-Server/Scratch

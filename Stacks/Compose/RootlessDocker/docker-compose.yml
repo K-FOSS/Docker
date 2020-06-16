@@ -13,8 +13,10 @@ services:
     volumes:
       - dockerSocket:/run/user/1000
 
-  Docker:
-    image: kristianfoss/programs-docker:scratch-docker
-    command: ['run', '-it', 'hello-world']
+  Shell:
+    image: kristianfoss/programs-docker:docker-alpine
+    tty: true
+    stdin_open: true
+    entrypoint: ['/bin/sh', '-i']
     volumes:
       - dockerSocket:/var/run

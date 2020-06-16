@@ -1,5 +1,5 @@
 ARG FINAL_BASE='scratch'
-ARG BUILD_IMAGE='alpine:3.11'
+ARG BUILD_IMAGE='alpine'
 ARG BINARY_NAME='binary-out'
 ARG BUILD_PKGS=''
 ARG GIT_REPO

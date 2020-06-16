@@ -8,6 +8,7 @@ BASEDIR=$(dirname "$0")
 PUSH_IMAGES="kristianfoss/programs-step \
   kristianfoss/programs-gomtr \
   kristianfoss/programs-keybase \
+  kristianfoss/programs-docker \
   kristianfjones/bin-installer \
   kristianfoss/programs-pgweb \
   kristianfoss/programs-librespeed \

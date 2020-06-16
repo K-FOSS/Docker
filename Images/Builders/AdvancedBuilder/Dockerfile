@@ -1,6 +1,6 @@
-ARG BASE_REPO="alpine"
-ARG BASE_TAG="3.11"
-ARG PKGS=""
+ARG BASE_REPO='alpine'
+ARG BASE_TAG='latest'
+ARG PKGS=''
 
 ARG IMG_CMD
 
