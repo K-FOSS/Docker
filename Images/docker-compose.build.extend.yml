@@ -1,0 +1,262 @@
+version: '3.8'
+
+x-extendStaticBuilder: &extendStaticBuilder
+  context: ./Builders/
+  dockerfile: ExtendStaticBuilder.Dockerfile
+
+services:
+  #
+  # CoreDNS
+  #
+  # Website: https://coredns.io/
+  # GitHub: https://github.com/coredns/coredns
+  # Docs: https://coredns.io/manual/toc/
+  #
+  coreDNSAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-coredns:scratch
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-coredns:alpine
+
+  #
+  # Teleport SSH
+  #
+  # Website: https://gravitational.com/teleport
+  # GitHub: https://github.com/gravitational/teleport
+  # Docs: https://gravitational.com/teleport/docs/
+  #
+  # Teleport CLI/Server with a `FROM alpine` final base image
+  teleportAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-teleport:teleport-scratch
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-teleport:teleport-alpine
+
+  # Teleport TSH CLI with a `FROM alpine` final base image
+  teleportTSHAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-teleport:teleport-scratch
+        FINAL_BASE: alpine
+        EXTEND_SRC_PATH: /usr/bin/tsh
+        EXTEND_DEST_PATH: /usr/bin/tsh
+        POST_CMD: |
+          ls -lah /tmp/out
+          cd /tmp/out/usr/bin/ && ln -s ./tsh ./cliLink
+    image: kristianfoss/programs-teleport:tsh-alpine
+
+  # Teleport TCTL CLI with a `FROM alpine` final base image
+  teleportTCTLAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-teleport:teleport-scratch
+        FINAL_BASE: alpine
+        EXTEND_SRC_PATH: /usr/bin/tctl
+        EXTEND_DEST_PATH: /usr/bin/tctl
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tctl ./cliLink
+    image: kristianfoss/programs-teleport:tctl-alpine
+
+  #
+  # Cloudflared
+  #
+  # Website: https://developers.cloudflare.com/argo-tunnel/
+  # GitHub: https://github.com/cloudflare/cloudflared
+  # Docs: https://developers.cloudflare.com/argo-tunnel/quickstart
+  #
+
+  # cloudflared CLI with a `FROM alpine` final base image
+  cloudflaredAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-cloudflared:scratch
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-cloudflared:cloudflared-alpine
+
+  # cloudflared CLI with a `FROM scratch` final base image
+  cloudflaredScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-cloudflared:scratch
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-cloudflared:cloudflared-scratch
+
+  #
+  # Go MTR
+  #
+  # GitHub: https://github.com/tonobo/mtr
+  #
+
+  # Go MTR CLI with a `FROM alpine` final base image
+  goMTRAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-gomtr:gomtr-scratch
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-gomtr:gomtr-alpine
+
+  #
+  # PGWeb
+  #
+  # Website: http://sosedoff.github.io/pgweb/
+  # GitHub: https://github.com/sosedoff/pgweb
+  # Docs: https://github.com/sosedoff/pgweb/wiki
+  #
+
+  # PGWeb CLI/Server with a `FROM alpine` final base image
+  pgWebAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-pgweb:pgweb-scratch
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-pgweb:pgweb-alpine
+
+  #
+  # Step CLI
+  #
+  # Website: https://smallstep.com/cli/
+  # GitHub: https://github.com/smallstep/cli
+  #
+
+  # Step CLI with `FROM scratch` final base image
+  stepCLIScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-step:build-scratch
+        EXTEND_SRC_PATH: /usr/bin/step
+        EXTEND_DEST_PATH: /usr/bin/step
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-step:cli-scratch
+
+  #
+  # Busybox Telnet
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#telnet
+  #
+
+  # Busybox Telnet with a `FROM scratch` final base image
+  telnetScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/telnet
+        EXTEND_DEST_PATH: /usr/bin/telnet
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./telnet ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-telnet:telnet-scratch
+
+  # Busybox Telnet with a `FROM alpine` final base image
+  telnetAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/telnet
+        EXTEND_DEST_PATH: /usr/bin/telnet
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./telnet ./entrypoint
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-telnet:telnet-alpine
+
+  #
+  # Busybox TFTP
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#tftp
+  #
+  tftpScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/tftp
+        EXTEND_DEST_PATH: /usr/bin/tftp
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tftp ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-tftp:tftp-scratch
+
+  tftpAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/tftp
+        EXTEND_DEST_PATH: /usr/bin/tftp
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tftp ./entrypoint
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-tftp:tftp-alpine
+
+  #
+  # Busybox traceroute
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#tftp
+  #
+  tracerouteScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/traceroute
+        EXTEND_DEST_PATH: /usr/bin/traceroute
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./traceroute ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-traceroute:traceroute-scratch
+
+  #
+  # Busybox nslookup
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#nslookup
+  #
+  nslookupScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/nslookup
+        EXTEND_DEST_PATH: /usr/bin/nslookup
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./nslookup ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-nslookup:nslookup-scratch
+
+  nslookupAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/nslookup
+        EXTEND_DEST_PATH: /usr/bin/nslookup
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./nslookup ./entrypoint
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-nslookup:nslookup-alpine
+
+  #
+  # Docker
+  #
+  # Website: https://docker.com
+  # GitHub
+  #
+
+  # Docker Stable Static Binaries with a `FROM scratch` final base image
+  dockerCLIStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-docker:docker-stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/docker
+        EXTEND_DEST_PATH: /usr/bin/docker
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./docker ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-docker:docker-cli-stable-scratch

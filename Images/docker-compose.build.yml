@@ -35,6 +35,14 @@ x-staticBuilder: &staticBuilder
   context: ./Builders/
   dockerfile: StaticBuilder.Dockerfile
 
+x-sourcecBuilder: &sourceBuilder
+  context: ./Builders/
+  dockerfile: SourceBuilder.Dockerfile
+
+x-sourcecStaticBuilder: &sourceStaticBuilder
+  context: ./Builders/
+  dockerfile: SourceStaticBuilder.Dockerfile
+
 x-scriptBuilder: &scriptBuilder
   context: ./Builders
   dockerfile: ScriptRunner.Dockerfile
@@ -105,20 +113,37 @@ services:
   # GitHub: https://github.com/sosedoff/pgweb
   # Docs: https://github.com/sosedoff/pgweb/wiki
   #
-  pgWebScratch:
+
+  # pggweb CLI/Sevrer build from Main with a `FROM scratch` final base image
+  pgWebMainScratch:
     build:
-      <<: *staticBuilder
+      <<: *sourceStaticBuilder
       args:
         BUILD_IMAGE: golang:alpine
-        BUILD_PATH: /go/src/github.com/sosedoff/pgweb
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/sosedoff
-          cd /go/src/github.com/sosedoff && git clone -b master https://github.com/sosedoff/pgweb.git
-        BUILD_SETUP: make setup
-        BUILD_CMD: go build -o /tmp/pgweb/usr/bin/pgweb
+        SOURCE_IMAGE: kristianfoss/source-pgweb:main-scratch
+        SOURCE_PATH: /go/src/github.com/sosedoff/pgweb
         BINARY_NAME: pgweb
+        BUILD_CMD: |
+          make setup
+          go build -o /tmp/pgweb/usr/bin/pgweb
         FINAL_BASE: scratch
-    image: kristianfoss/programs-pgweb:scratch
+        USER: user
+    image: kristianfoss/programs-pgweb:pgweb-main-scratch
+
+  pgWebStableScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        BUILD_IMAGE: golang:alpine
+        SOURCE_IMAGE: kristianfoss/source-pgweb:stable-scratch
+        SOURCE_PATH: /go/src/github.com/sosedoff/pgweb
+        BINARY_NAME: pgweb
+        BUILD_CMD: |
+          make setup
+          go build -o /tmp/pgweb/usr/bin/pgweb
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-pgweb:pgweb-stable-scratch
 
   #
   # Pulumi WIP
@@ -148,40 +173,20 @@ services:
   # GitHub: https://github.com/tonobo/mtr
   #
 
-  # goMTR with a `FROM alpine` final base image
-  goMTRAlpine:
-    build:
-      <<: *staticBuilder
-      args:
-        BUILD_IMAGE: golang:alpine
-        BUILD_PKGS: libcap
-        BUILD_PATH: /go/src/github.com/tonobo/mtr
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/tonobo
-          cd /go/src/github.com/tonobo && git clone -b master https://github.com/tonobo/mtr.git
-        POST_BUILD_CMD: setcap cap_net_raw+ep /tmp/mtr/usr/bin/mtr
-        BINARY_NAME: mtr
-        BUILD_CMD: go build -trimpath -tags netgo -o /tmp/mtr/usr/bin/mtr
-        FINAL_BASE: alpine
-    image: kristianfoss/programs-gomtr:alpine
-
   # goMTR with a `FROM scratch` final base image
   goMTRScratch:
     build:
-      <<: *staticBuilder
+      <<: *sourceStaticBuilder
       args:
+        SOURCE_IMAGE: kristianfoss/source-gomtr:master-scratch
         BUILD_IMAGE: golang:alpine
         BUILD_PKGS: libcap
-        BUILD_PATH: /go/src/github.com/tonobo/mtr
+        SOURCE_PATH: /go/src/github.com/tonobo/mtr
         BINARY_NAME: mtr
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/tonobo
-          cd /go/src/github.com/tonobo && git clone -b master https://github.com/tonobo/mtr.git
         POST_BUILD_CMD: setcap cap_net_raw+ep /tmp/mtr/usr/bin/mtr
-
         BUILD_CMD: go build -trimpath -tags netgo -o /tmp/mtr/usr/bin/mtr
         FINAL_BASE: scratch
-    image: kristianfoss/programs-gomtr:scratch
+    image: kristianfoss/programs-gomtr:gomtr-scratch
 
   #
   # Git
@@ -194,8 +199,6 @@ services:
     build:
       <<: *staticBuilder
       args:
-        FINAL_BASE: alpine
-        USER: user
         BUILD_IMAGE: alpine
         BUILD_PKGS: zlib-dev zlib-static pcre2-dev build-base curl-dev curl-static autoconf automake openssl-dev	openssl-libs-static expat-dev expat-static
         BUILD_PATH: /src/git
@@ -206,7 +209,7 @@ services:
           make configure
           echo "NO_GETTEXT=YesPlease\nNO_SVN_TESTS=YesPlease\nNO_REGEX=YesPlease\nUSE_LIBPCRE2=YesPlease\nNO_SYS_POLL_H=1\nCFLAGS=$CFLAGS\nICONV_OMITS_BOM=Yes" > config.mak
           ./configure --prefix=/usr --without-tcltk --with-curl
-          make
+          make -j$$(getconf _NPROCESSORS_ONLN)
           make DESTDIR="/tmp/git" install
         POST_BUILD_CMD: |
           ls -lah /tmp/git/usr/bin
@@ -215,7 +218,208 @@ services:
           echo "root:x:0:0:root:/root:/usr/sbin/nologin" > /tmp/git/etc/passwd
           echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" >> /tmp/git/etc/passwd
         BINARY_NAME: git
+        FINAL_BASE: alpine
+        USER: user
     image: kristianfoss/programs-git:cli-alpine
+
+  #
+  # Keybase CLI
+  #
+  # Website: https://keybase.io
+  # GitHub: https://github.com/keybase/cli
+  #
+  keybaseScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        SOURCE_IMAGE: kristianfoss/source-keybase:master-scratch
+        BUILD_IMAGE: golang:1.13.10-alpine3.11
+        SOURCE_PATH: /go/src/github.com/keybase/client
+        BUILD_PKGS: git bash
+        BINARY_NAME: keybase
+        BUILD_CMD: |
+          export KEYBASE_NO_GUI=1
+          export KEYBASE_SKIP_32_BIT=1
+          export GO15VENDOREXPERIMENT=1
+
+          export GOPATH="/go"
+          cd ./go/client
+          go build -v -a -tags production -o /tmp/keybase/usr/bin/keybase
+        POST_CMD: |
+          ls -lah /tmp/keybase/usr/bin/keybase
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-keybase:cli-scratch
+
+  #
+  # Pomerium
+  #
+  # Website: https://www.pomerium.io/
+  # GitHub: https://github.com/pomerium/pomerium
+  # Docs: https://www.pomerium.io/docs/
+  #
+  pomeriumMainScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        SOURCE_IMAGE: kristianfoss/source-pomerium:main-scratch
+        BUILD_IMAGE: golang:alpine
+        SOURCE_PATH: /go/src/github.com/pomerium/pomerium
+        BINARY_NAME: pomerium
+        BUILD_PKGS: zip bash
+        SETUP_CMD: go mod download
+        BUILD_CMD: |
+          make build-deps
+          make build
+        POST_CMD: mv /go/src/github.com/pomerium/pomerium/bin/pomerium /tmp/pomerium/usr/bin/
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-pomerium:pomerium-main-scratch
+
+  #
+  # Prometheus
+  #
+  # Website: https://prometheus.io/
+  # Repo: https://github.com/prometheus/prometheus
+  # Docs: https://prometheus.io/docs/introduction/overview/
+  #
+  prometheusScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        USER: user
+        SOURCE_IMAGE: kristianfoss/source-prometheus:master-scratch
+        BUILD_IMAGE: golang:alpine
+        SOURCE_PATH: /go/src/github.com/prometheus/prometheus
+        BINARY_NAME: prometheus
+        BUILD_PKGS: yarn bash curl
+        BUILD_CMD: |
+          make build
+        POST_CMD: |
+          ls -lah /go/src/github.com/prometheus/prometheus
+          mv /go/src/github.com/prometheus/prometheus/prometheus /tmp/prometheus/usr/bin/
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-prometheus:prometheus-scratch
+
+  #
+  # Netdata Source
+  #
+  # Website: https://www.netdata.cloud/
+  # GitHub: https://github.com/netdata/netdata.git
+  # Docs: https://learn.netdata.cloud/docs/agent
+  #
+  netdataScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        SOURCE_IMAGE: kristianfoss/source-netdata:master-scratch
+        BUILD_IMAGE: alpine
+        SOURCE_PATH: /src/netdata
+        BINARY_NAME: netdata
+        BUILD_PKGS: bash zlib-dev zlib-static  e2fsprogs-dev e2fsprogs-static linux-headers libcap-dev 	libcap-static automake autoconf openssl-dev openssl-libs-static libuv-dev libuv-static
+        SETUP_CMD: |
+          ./packaging/makeself/install-alpine-packages.sh
+        BUILD_CMD: |
+          ./packaging/makeself/build.sh || true
+        POST_CMD: |
+          mv /opt/netdata/bin/netdata /tmp/netdata/usr/bin/
+          mkdir -p /tmp/netdata/opt/netdata/var /tmp/netdata/opt/netdata/usr/share/netdata
+          mv /opt/netdata/var/* /tmp/netdata/opt/netdata/var/
+          mv /opt/netdata/usr/share/netdata/* /tmp/netdata/opt/netdata/usr/share/netdata/
+          mkdir -p /tmp/netdata/opt/netdata/etc/netdata /tmp/netdata/opt/netdata/usr/lib/netdata/conf.d /tmp/netdata/opt/netdata/usr/libexec/netdata/plugins.d /tmp/netdata/opt/netdata/usr/share/netdata/web
+          chown -R 1000:1000 /tmp/netdata/opt/netdata
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-netdata:netdata-scratch
+
+  #
+  # Cadvisor
+  #
+  # Website:
+  # GitHub: https://github.com/google/cadvisor
+  #
+  cadvisorMainScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        BUILD_IMAGE: golang:alpine
+        SOURCE_IMAGE: kristianfoss/source-cadvisor:main-scratch
+        SOURCE_PATH: /go/src/github.com/google/cadvisor
+        BINARY_NAME: cadvisor
+        BUILD_PKGS: bash
+        BUILD_CMD: |
+          make build
+        POST_CMD: |
+          mv /go/src/github.com/google/cadvisor/cadvisor /tmp/cadvisor/usr/bin/
+        FINAL_BASE: scratch
+        USER: root
+    image: kristianfoss/programs-cadvisor:cli-main-scratch
+
+  #
+  # ZSH
+  #
+  # Website: https://www.netdata.cloud/
+  # GitHub: https://github.com/netdata/netdata.git
+  # Docs: https://learn.netdata.cloud/docs/agent
+  #
+
+  # Zsh Stable with a `FROM scratch` final base image
+  zshStableScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        SOURCE_IMAGE: kristianfoss/source-zsh:stable-scratch
+        BUILD_IMAGE: alpine
+        SOURCE_PATH: /src/zsh
+        BINARY_NAME: zsh
+        BUILD_PKGS: ncurses-dev ncurses-static
+        SETUP_CMD: |
+          export LD_FLAGS="$$LD_FLAGS -static"
+          ./Util/preconfig
+          ./configure --disable-dynamic --enable-libc-musl --prefix=/usr --enable-ldflags=-static --without-tcsetpgrp --enable-zshenv=/.zshenv
+        BUILD_CMD: |
+          make -j$$(getconf _NPROCESSORS_ONLN)
+        POST_CMD: |
+          mv /src/zsh/Src/zsh /tmp/zsh/usr/bin/
+          mkdir -p /tmp/zsh/usr/share/terminfo/v/
+          apk add --no-cache ncurses-terminfo
+          cp /usr/share/terminfo/v/vt100* /tmp/zsh/usr/share/terminfo/v/
+          mkdir -p /tmp/zsh/home/user/
+          echo "export TERM=vt100" > /tmp/zsh/.zshenv
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-zsh:zsh-scratch
+
+  #
+  # Busybox
+  #
+  # Website: https://www.busybox.net
+  # Docs:
+  #
+  busyboxStableScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        SOURCE_IMAGE: kristianfoss/source-busybox:stable-scratch
+        BUILD_IMAGE: alpine
+        SOURCE_PATH: /src/busybox
+        BINARY_NAME: busybox
+        BUILD_PKGS: linux-headers
+        SETUP_CMD: |
+          make defconfig
+          sed -e 's/.*FEATURE_PREFER_APPLETS.*/CONFIG_FEATURE_PREFER_APPLETS=y/' -i .config
+          sed -e 's/.*CONFIG_STATIC.*/CONFIG_STATIC=y/' -i .config
+        BUILD_CMD: |
+          make -j$$(getconf _NPROCESSORS_ONLN) || true
+          ./make_single_applets.sh || true
+        POST_CMD: |
+          ls -lah /src/busybox
+          for APPLET in $$(ls /src/busybox  | egrep 'busybox_[a-zA-Z]+$$'); do mv $${APPLET} /tmp/busybox/usr/bin/$$(echo $${APPLET#busybox_} | tr '[:upper:]' '[:lower:]'); done
+
+          cp /tmp/busybox/usr/bin/telnet /tmp/busybox/usr/bin/busybox
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-busybox:stable-scratch
 
   #
   # LibreSpeed
@@ -224,22 +428,19 @@ services:
   # GitHub: https://github.com/librespeed/speedtest
   #
 
-  # LibreSpeed Go Version
-  libreSpeedGoAlpine:
+  # LibreSpeed Go Version with a `FROM scratch` final base image
+  librespeedGoScratch:
     build:
-      <<: *staticBuilder
+      <<: *sourceStaticBuilder
       args:
+        SOURCE_IMAGE: kristianfoss/source-librespeed:go-scratch
         BUILD_IMAGE: golang:alpine
+        SOURCE_PATH: /go/src/github.com/librespeed/speedtest
         BINARY_NAME: speedtest
-        BUILD_PKGS: bash
-        BUILD_PATH: /go/src/github.com/librespeed/speedtest
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/librespeed
-          cd /go/src/github.com/librespeed && git clone -b go https://github.com/librespeed/speedtest.git
         BUILD_CMD: go build -trimpath -o /tmp/speedtest/usr/bin/speedtest main.go
         POST_BUILD_CMD: cp -R /go/src/github.com/librespeed/speedtest/assets /tmp/speedtest/assets
-        FINAL_BASE: alpine
-    image: kristianfoss/programs-librespeed:go-alpine
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-librespeed:speedtest-go-scratch
 
   #
   # WireGuard Tools
@@ -251,15 +452,15 @@ services:
       <<: *gitStaticBuilder
       args:
         BUILD_IMAGE: alpine
-        BUILD_PKGS: 'build-base linux-headers'
+        BUILD_PKGS: build-base linux-headers
         BINARY_NAME: wg
         GIT_REPO: https://git.zx2c4.com/wireguard-tools
         GIT_BRANCH: master
         BUILD_PATH: /tmp/src/wireguard-tools
-        BUILD_CMD: 'make -C src'
-        POST_BUILD_CMD: 'mv /tmp/src/wireguard-tools/src/wg /tmp/wg/usr/bin/'
-        POST_CMD: 'ls -lah /usr/bin'
-        FINAL_BASE: 'alpine'
+        BUILD_CMD: make -C src
+        POST_BUILD_CMD: mv /tmp/src/wireguard-tools/src/wg /tmp/wg/usr/bin/
+        POST_CMD: ls -lah /usr/bin
+        FINAL_BASE: alpine
     environment:
       WITH_WGQUICK: 'yes'
     image: kristianfoss/programs-wg:alpine
@@ -317,74 +518,43 @@ services:
   # Website: https://smallstep.com/cli/
   # GitHub: https://github.com/smallstep/cli
   #
+
   # Step CLI with `FROM scratch` final base image
   stepCLIScratch:
     build:
-      <<: *staticBuilder
+      <<: *sourceStaticBuilder
       args:
+        SOURCE_IMAGE: kristianfoss/source-step-cli:master-scratch
         BUILD_IMAGE: golang:alpine
-        BUILD_PATH: /go/src/github.com/smallstep/cli
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/smallstep
-          cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/cli.git
-        BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/github.com/smallstep/cli/bin/step /tmp/step/usr/bin/step
+        SOURCE_PATH: /go/src/github.com/smallstep/cli
         BINARY_NAME: step
+        BUILD_CMD: make -j$$(getconf _NPROCESSORS_ONLN) build
+        POST_BUILD_CMD: mv /go/src/github.com/smallstep/cli/bin/step /tmp/step/usr/bin/step
         FINAL_BASE: scratch
-    image: kristianfoss/programs-step:scratch-cli
-
-  # Step CLI with `FROM alpine` final base image
-  stepCLIAlpine:
-    build:
-      <<: *staticBuilder
-      args:
-        BUILD_IMAGE: golang:alpine
-        BUILD_PATH: /go/src/github.com/smallstep/cli
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/smallstep
-          cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/cli.git
-        BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/github.com/smallstep/cli/bin/step /tmp/step/usr/bin/step
-        BINARY_NAME: step
-        FINAL_BASE: alpine
-    image: kristianfoss/programs-step:alpine-cli
+    image: kristianfoss/programs-step-cli:scratch
 
   #
-  # Step Certificates Server
+  # Step Certificates
   #
   # Website: https://smallstep.com/certificates/
+  # GitHub: https://github.com/smallstep/certificates
   #
 
   # Step Certificates with `FROM scratch` final base image
   stepCertificatesScratch:
     build:
-      <<: *staticBuilder
+      <<: *sourceStaticBuilder
       args:
+        SOURCE_IMAGE: kristianfoss/source-step-certificates:master-scratch
         BUILD_IMAGE: golang:alpine
-        BUILD_PATH: /go/src/github.com/smallstep/certificates
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/smallstep
-          cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/certificates.git
-        BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/github.com/smallstep/certificates/bin/step-ca /tmp/step-ca/usr/bin/step-ca
+        SOURCE_PATH: /go/src/github.com/smallstep/certificates
         BINARY_NAME: step-ca
-    image: kristianfoss/programs-step:scratch-certificates
-
-  # Step Certificates with `FROM alpine` final base image
-  stepCertificatesAlpine:
-    build:
-      <<: *staticBuilder
-      args:
-        BUILD_IMAGE: golang:alpine
-        BUILD_PATH: /go/src/github.com/smallstep/certificates
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/smallstep
-          cd /go/src/github.com/smallstep && git clone -b master https://github.com/smallstep/certificates.git
-        BUILD_CMD: make build
-        POST_BUILD_CMD: mv /go/src/github.com/smallstep/certificates/bin/step-ca /tmp/step-ca/usr/bin/step-ca
-        BINARY_NAME: step-ca
-        FINAL_BASE: alpine
-    image: kristianfoss/programs-step:alpine-certificates
+        BUILD_CMD: make -j$$(getconf _NPROCESSORS_ONLN) build
+        POST_BUILD_CMD: |
+          ls -lah /go/src/github.com/smallstep/certificates/bin/step-ca  
+          mv /go/src/github.com/smallstep/certificates/bin/step-ca /tmp/step-ca/usr/bin/step-ca
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-step-certificates:scratch
 
   #
   # WIP Vault
@@ -410,60 +580,29 @@ services:
   #   image: kristianfoss/programs-vault:alpine-vault
 
   #
-  # TELEPORT
-  # https://gravitational.com/teleport/docs/
+  # Teleport SSH
   #
-  teleportAlpine:
+  # Website: https://gravitational.com/teleport
+  # GitHub: https://github.com/gravitational/teleport
+  # Docs: https://gravitational.com/teleport/docs/
+  #
+
+  # Teleport CLI/Server with a `FROM scratch` final base image
+  teleportScratch:
     build:
-      <<: *staticBuilder
+      <<: *sourceStaticBuilder
       args:
         BUILD_IMAGE: golang:alpine
-        BUILD_PKGS: 'zip'
-        BUILD_PATH: /go/src/github.com/gravitational/teleport
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/gravitational
-          cd /go/src/github.com/gravitational && git clone -b master https://github.com/gravitational/teleport.git
-        BUILD_CMD: make full
-        POST_BUILD_CMD: 'cp /go/src/github.com/gravitational/teleport/build/teleport /go/src/github.com/gravitational/teleport/build/tctl /tmp/teleport/usr/bin/'
+        SOURCE_IMAGE: kristianfoss/source-teleport:master-scratch
+        SOURCE_PATH: /go/src/github.com/gravitational/teleport
+        BUILD_PKGS: zip
         BINARY_NAME: teleport
-        FINAL_BASE: alpine
-    image: kristianfoss/programs-teleport:alpine-teleport
-
-  # Teleport TCTL CLI with a `FROM alpine` final base image
-  teleportTCTLAlpine:
-    build:
-      <<: *staticBuilder
-      args:
-        BUILD_IMAGE: golang:alpine
-        BUILD_PKGS: zip
-        BUILD_PATH: /go/src/github.com/gravitational/teleport
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/gravitational
-          cd /go/src/github.com/gravitational && git clone -b master https://github.com/gravitational/teleport.git
-        BUILD_CMD: |
-          make full
-        POST_BUILD_CMD: mv /go/src/github.com/gravitational/teleport/build/tctl /tmp/tctl/usr/bin/tctl
-        BINARY_NAME: tsh
-        FINAL_BASE: alpine
-    image: kristianfoss/programs-teleport:alpine-tctl
-
-  # Teleport TSH CLI with a `FROM alpine` final base image
-  teleportTSHAlpine:
-    build:
-      <<: *staticBuilder
-      args:
-        BUILD_IMAGE: golang:alpine
-        BUILD_PKGS: zip
-        BUILD_PATH: /go/src/github.com/gravitational/teleport
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/gravitational
-          cd /go/src/github.com/gravitational && git clone -b master https://github.com/gravitational/teleport.git
-        BUILD_CMD: |
-          make full
-        POST_BUILD_CMD: mv /go/src/github.com/gravitational/teleport/build/tsh /tmp/tsh/usr/bin/tsh
-        BINARY_NAME: tsh
-        FINAL_BASE: alpine
-    image: kristianfoss/programs-teleport:alpine-tsh
+        BUILD_CMD: make full
+        POST_BUILD_CMD: |
+          mkdir -p /tmp/teleport/usr/bin
+          ls -lah /go/src/github.com/gravitational/teleport/build
+          mv /go/src/github.com/gravitational/teleport/build/teleport /go/src/github.com/gravitational/teleport/build/tctl /go/src/github.com/gravitational/teleport/build/tsh  /tmp/teleport/usr/bin/
+    image: kristianfoss/programs-teleport:teleport-scratch
 
   #
   # ETCD
@@ -488,48 +627,62 @@ services:
     image: kristianfoss/programs-etcd:alpine-etcd
 
   #
-  # Cloudflared CLI
+  # CoreDNS
   #
-  # Website: https://cloudflare.com
-  # GitHub:
+  # Website: https://coredns.io/
+  # GitHub: https://github.com/coredns/coredns
+  # Docs: https://coredns.io/manual/toc/
+  #
 
-  # Cloudflared CLI with a `FROM alpine` final base image
-  cloudflaredAlpine:
+  coreDNSScratch:
     build:
-      <<: *staticBuilder
+      <<: *sourceStaticBuilder
       args:
-        FINAL_BASE: alpine
-        BUILD_IMAGE: golang:1.13.7-alpine
-        BUILD_PKGS: ''
-        BUILD_PATH: /go/src/github.com/cloudflare/cloudflared
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/cloudflare/
-          cd /go/src/github.com/cloudflare/ && git clone -b master https://github.com/cloudflare/cloudflared.git
-        BUILD_CMD: |
-          make cloudflared
+        BUILD_IMAGE: golang:alpine
+        SOURCE_IMAGE: kristianfoss/source-coredns:master-scratch
+        SOURCE_PATH: /go/src/github.com/coredns/coredns
+        BINARY_NAME: coredns
+        BUILD_CMD: make coredns
+        POST_BUILD_CMD: |
+          mkdir -p /tmp/coredns/usr/bin
+          mv /go/src/github.com/coredns/coredns/coredns /tmp/coredns/usr/bin/coredns
+    image: kristianfoss/programs-coredns:scratch
+
+  #
+  # Cloudflared
+  #
+  # Website: https://developers.cloudflare.com/argo-tunnel/
+  # GitHub: https://github.com/cloudflare/cloudflared
+  # Docs: https://developers.cloudflare.com/argo-tunnel/quickstart
+  #
+
+  # Cloudflared CLI Main Built with `FROM scratch` as the final base image
+  cloudflaredMainScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        BUILD_IMAGE: golang:alpine
+        SOURCE_IMAGE: kristianfoss/source-cloudflared:main-scratch
+        SOURCE_PATH: /go/src/github.com/cloudflare/cloudflared
+        BINARY_NAME: cloudflared
+        BUILD_CMD: make cloudflared
         POST_BUILD_CMD: |
           mv /go/src/github.com/cloudflare/cloudflared/cloudflared /tmp/cloudflared/usr/bin/cloudflared
-        BINARY_NAME: cloudflared
-    image: kristianfoss/programs-cloudflared:alpine
+    image: kristianfoss/programs-cloudflared:cloudflared-main-scratch
 
-  # Cloudflared CLI with a `FROM scratch` final base image
-  cloudflaredScratch:
+  # Cloudflared CLI Main Built with `FROM scratch` as the final base image
+  cloudflaredStableScratch:
     build:
-      <<: *staticBuilder
+      <<: *sourceStaticBuilder
       args:
-        FINAL_BASE: scratch
-        BUILD_IMAGE: golang:1.13.7-alpine
-        BUILD_PKGS: ''
-        BUILD_PATH: /go/src/github.com/cloudflare/cloudflared
-        FETCH_CMD: |
-          mkdir -p /go/src/github.com/cloudflare/
-          cd /go/src/github.com/cloudflare/ && git clone -b master https://github.com/cloudflare/cloudflared.git
-        BUILD_CMD: |
-          make cloudflared
+        BUILD_IMAGE: golang:alpine
+        SOURCE_IMAGE: kristianfoss/source-cloudflared:stable-scratch
+        SOURCE_PATH: /go/src/github.com/cloudflare/cloudflared
+        BINARY_NAME: cloudflared
+        BUILD_CMD: make cloudflared
         POST_BUILD_CMD: |
           mv /go/src/github.com/cloudflare/cloudflared/cloudflared /tmp/cloudflared/usr/bin/cloudflared
-        BINARY_NAME: cloudflared
-    image: kristianfoss/programs-cloudflared:alpine
+    image: kristianfoss/programs-cloudflared:cloudflared-stable-scratch
 
   #
   # Shadow
@@ -555,7 +708,7 @@ services:
             --disable-nls \
             --without-group-name-max-length \
             --enable-static
-          make
+          make -j$$(getconf _NPROCESSORS_ONLN)
           make DESTDIR="/tmp/newuidmap" install
         POST_BUILD_CMD: |
           ldd /tmp/newuidmap/usr/bin/newuidmap
@@ -638,55 +791,22 @@ services:
   # Website: https://docker.com
   #
 
-  # Docker CLI with a `FROM alpine` final base image
-  dockerAlpine:
+  # Docker Stable Static Binaries with a `FROM scratch` final base image
+  dockerStableScratch:
     build:
-      <<: *staticBuilder
+      <<: *sourceStaticBuilder
       args:
-        USER: user
-        BUILD_IMAGE: golang:1.14.4-alpine
-        BUILD_PKGS: ack
+        SOURCE_IMAGE: kristianfoss/source-docker:stable-scratch
+        BUILD_IMAGE: alpine
+        SOURCE_PATH: /src/docker
+        BUILD_PKGS: ''
         BUILD_PATH: /src/docker
-        POST_BUILD_CMD: |
-          mkdir -p /tmp/docker/usr/bin
-          mv /src/docker/docker /tmp/docker/usr/bin/
-        POST_CMD: |
-          echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" > /tmp/docker/etc/passwd
         BINARY_NAME: docker
-        BUILD_CMD: |
-          strip /src/docker/*
-        FETCH_CMD: |
-          mkdir -p /src/docker
-          export DOCKER_VERSION=$$(wget -O - -q https://download.docker.com/linux/static/stable/x86_64/ | ack -o '(?<=>docker-)\d{2}\.\d{2}\.\d{1}' | tail -1)
-          echo "Getting Docker $$DOCKER_VERSION"
-          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1
-        FINAL_BASE: alpine
-    image: kristianfoss/programs-docker:docker-alpine
-
-  # Docker CLI with a `FROM alpine` final base image
-  dockerScratch:
-    build:
-      <<: *staticBuilder
-      args:
-        USER: user
-        BUILD_IMAGE: golang:1.14.4-alpine
-        BUILD_PKGS: ack
-        BUILD_PATH: /src/docker
-        POST_BUILD_CMD: |
-          mkdir -p /tmp/docker/usr/bin
-          mv /src/docker/docker /tmp/docker/usr/bin/
-        POST_CMD: |
-          echo "user:x:1000:1000:user:/home/user:/usr/sbin/nologin" > /tmp/docker/etc/passwd
-        BINARY_NAME: docker
-        BUILD_CMD: |
-          strip /src/docker/*
-        FETCH_CMD: |
-          mkdir -p /src/docker
-          export DOCKER_VERSION=$$(wget -O - -q https://download.docker.com/linux/static/stable/x86_64/ | ack -o '(?<=>docker-)\d{2}\.\d{2}\.\d{1}' | tail -1)
-          echo "Getting Docker $$DOCKER_VERSION"
-          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1
+        BUILD_CMD: strip /src/docker/*
+        POST_BUILD_CMD: mv /src/docker/* /tmp/docker/usr/bin/
         FINAL_BASE: scratch
-    image: kristianfoss/programs-docker:docker-scratch
+        USER: user
+    image: kristianfoss/programs-docker:docker-stable-scratch
 
   # Rootless DockerD with a `FROM alpine` final base image
   rootlesesDockerDAlpine:
@@ -745,30 +865,66 @@ services:
   # Docs: https://www.mono-project.com/docs/
   #
 
+  # Mono 5.20 CLI with a `FROM alpine` final base image
+  mono5Alpine:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        BUILD_IMAGE: alpine
+        SOURCE_IMAGE: kristianfoss/source-mono:5.20-scratch
+        SOURCE_PATH: /src/momo
+        PKG_ARGS: '--repository http://dl-cdn.alpinelinux.org/alpine/edge/testing'
+        BUILD_PKGS: python3 cmake linux-headers autoconf automake cmake libtool paxmark zlib-dev zlib-static python3-dev mono
+        BINARY_NAME: mono
+        SETUP_CMD: |
+          cat data/config.in
+        BUILD_CMD: |
+          export LD_FLAGS="-no-pie -static -static-libgcc"
+          export CFLAGS="$CFLAGS -fno-strict-aliasing"
+          patch -p1 -i ./python3.patch
+          ./configure --prefix=/usr \
+            --disable-rpath \
+            --disable-boehm \
+            --enable-parallel-mark \
+            --with-mcs-docs=no \
+            --without-x \
+            --without-sigaltstack \
+            --with-sgen-default-concurrent=yes \
+            --disable-crash-reporting \
+            --with-gnu-ld
+          make -j$$(getconf _NPROCESSORS_ONLN)
+          make -j1 DESTDIR="/tmp/mono" install
+        POST_BUILD_CMD: |
+          ls -lah /tmp/mono/usr/bin
+    image: kristianfoss/programs-mono:5.20cli-alpine
+
   # Mono CLI with a 'FROM alpine' final base image
-  # monoAlpine:
-  #   build:
-  #     <<: *staticBuilder
-  #     args:
-  #       FINAL_BASE: alpine
-  #       BUILD_IMAGE: alpine
-  #       BUILD_PKGS: curl ack python3 cmake linux-headers
-  #       BUILD_PATH: /src/mono
-  #       FETCH_CMD: |
-  #         mkdir -p /src/mono
-  #         export MONO_VERSION=$$(wget -O - -q https://download.mono-project.com/sources/mono/ | ack -o '(?<=>mono-)\d{1}\.\d{1}\.\d{1}\.\d{3}' | tail -1)
-  #         echo "Getting Mono Version $${MONO_VERSION}"
-  #         wget -O - https://download.mono-project.com/sources/mono/mono-$${MONO_VERSION}.tar.xz | tar xJ -C /src/mono --strip-components=1
-  #         wget -O /src/mono/python3.patch https://git.alpinelinux.org/aports/plain/testing/mono/python3.patch
-  #       BUILD_CMD: |
-  #         patch -p1 -i ./python3.patch
-  #         ./configure --prefix=/usr --disable-dependency-tracking --enable-parallel-mark --with-mcs-docs=no --without-sigaltstack --disable-boehm --disable-crash-reporting  --enable-silent-rules --with-gnu-ld
-  #         make
-  #         make -j1 DESTDIR="/tmp/mono" install
-  #       POST_BUILD_CMD: |
-  #         ls -lah /tmp
-  #       BINARY_NAME: mono
-  #   image: kristianfoss/programs-mono:cli-alpine
+  monoAlpine:
+    build:
+      <<: *staticBuilder
+      args:
+        FINAL_BASE: alpine
+        BUILD_IMAGE: alpine
+        PKG_ARGS: '--repository http://dl-cdn.alpinelinux.org/alpine/edge/testing'
+        BUILD_PKGS: curl ack python3 cmake linux-headers
+        BUILD_PATH: /src/mono
+        FETCH_CMD: |
+          mkdir -p /src/mono
+          export MONO_VERSION=$$(wget -O - -q https://download.mono-project.com/sources/mono/ | ack -o '(?<=>mono-)\d{1}\.\d{1}\.\d{1}\.\d{3}' | tail -1)
+          echo "Getting Mono Version $${MONO_VERSION}"
+          wget -O - https://download.mono-project.com/sources/mono/mono-5.20.1.19.tar.bz2 | tar xj -C /src/mono --strip-components=1
+          wget -O /src/mono/python3.patch https://git.alpinelinux.org/aports/plain/testing/mono/python3.patch
+        BUILD_CMD: |
+          export LD_FLAGS="-no-pie -static -static-libgcc"
+          export CFLAGS="$CFLAGS -fno-strict-aliasing"
+          patch -p1 -i ./python3.patch
+          ./configure --prefix=/usr --disable-rpath --disable-boehm --enable-parallel-mark --with-mcs-docs=no --without-sigaltstack --with-gnu-ld
+          make -j$$(getconf _NPROCESSORS_ONLN)
+          make -j1 DESTDIR="/tmp/mono" install
+        POST_BUILD_CMD: |
+          ldd /tmp/mono/usr/bin
+        BINARY_NAME: mono
+    image: kristianfoss/programs-mono:cli-alpine
 
   ##
   ## SOURCE Images
@@ -803,7 +959,7 @@ services:
         BUILD_PKGS: 'make pkgconfig musl-dev git gcc bison flex linux-headers'
         BUILD_PATH: /tmp/src/iproute2
         BUILD_CMD: |
-          make
+          make -j$$(getconf _NPROCESSORS_ONLN)
           make -j1 DESTDIR="/tmp/ip" install
         POST_BUILD_CMD: |
           mkdir -p /tmp/ip/etc
@@ -848,13 +1004,13 @@ services:
   # GitHub:
   #
 
-  keybaseAlpine:
-    image: kristianfoss/programs-keybase:alpine-client
-    build:
-      <<: *simpleAlpineBuilder
-      args:
-        PKG_ARGS: '--repository http://dl-cdn.alpinelinux.org/alpine/edge/testing'
-        PKGS: 'keybase-client gnupg'
+  # keybaseAlpine:
+  #   image: kristianfoss/programs-keybase:alpine-client
+  #   build:
+  #     <<: *simpleAlpineBuilder
+  #     args:
+  #       PKG_ARGS: '--repository http://dl-cdn.alpinelinux.org/alpine/edge/testing'
+  #       PKGS: 'keybase-client gnupg'
 
   sshScratch:
     build:

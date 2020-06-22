@@ -21,6 +21,9 @@ PUSH_IMAGES="kristianfoss/programs-step \
   kristianfoss/programs-etcd \
   kristianfoss/source-iptables \
   kristianfoss/source-iproute2 \
+  kristianfoss/source-coredns \
+  kristianfoss/source-teleport \
+  kristianfoss/programs-pomerium:pomerium-scratch \
   kristianfoss/programs-cloudc2"
 
 
@@ -29,7 +32,9 @@ cd "${BASEDIR}/../Extras/Builder/"
 docker-compose up -d --build
 
 docker-compose exec -T -w /workspace Docker docker login -u ${USERNAME} -p ${PASSWORD} 
+docker-compose exec -T -w /workspace Docker docker buildx bake --pull -f ./docker-compose.build.source.yml
 docker-compose exec -T -w /workspace Docker docker buildx bake --pull -f ./docker-compose.build.yml
+docker-compose exec -T -w /workspace Docker docker buildx bake --pull -f ./docker-compose.build.extend.yml
 docker-compose exec -T -w /workspace Docker docker image ls
 
 # ${RUNNER} buildx bake -f ./docker-compose.build.yml

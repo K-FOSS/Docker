@@ -1,0 +1,40 @@
+{
+  "admin": {
+    "disabled": true
+  },
+  "apps": {
+    "http": {
+      "http_port": 8080,
+      "https_port": 8443,
+      "servers": {
+        "example.com": {
+          "listen": [":8080"],
+
+          "automatic_https": {
+            "disable": true
+          },
+
+          "routes": [
+            {
+              "match": [
+                {
+                  "host": ["netdata.example.com"]
+                }
+              ],
+              "handle": [
+                {
+                  "handler": "reverse_proxy",
+                  "upstreams": [
+                    {
+                      "dial": "Netdata:19999"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
