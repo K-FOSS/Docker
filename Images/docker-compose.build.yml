@@ -443,6 +443,61 @@ services:
     image: kristianfoss/programs-librespeed:speedtest-go-scratch
 
   #
+  # OpenSSH Source
+  #
+  # Website: https://www.openssh.com/
+  # GitHub: https://github.com/openssh/openssh-portable
+  # Docs: https://man.openbsd.org/ssh.1
+
+  # OpenSSH Main Build in a `FROM scratch` final base image
+  opensshMainScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        SOURCE_IMAGE: kristianfoss/source-openssh:main-scratch
+        BUILD_IMAGE: alpine
+        SOURCE_PATH: /src/openssh
+        BINARY_NAME: ssh
+        BUILD_PKGS: automake autoconf pkgconfig openssl-libs-static openssl-dev zlib-dev zlib-static
+        SETUP_CMD: |
+          autoreconf
+          ./configure \
+            --prefix=/usr \
+            --with-zlib=/lib/zlib.a \
+            --with-ldflags=-static
+        BUILD_CMD: make -j$$(getconf _NPROCESSORS_ONLN)
+        POST_BUILD_CMD: |
+          mv /src/openssh/scp /src/openssh/sftp /src/openssh/sftp-server /src/openssh/ssh /src/openssh/ssh-add /src/openssh/ssh-agent /src/openssh/ssh-keygen /src/openssh/ssh-keyscan /src/openssh/ssh-keysign /src/openssh/ssh-pkcs11-helper /src/openssh/ssh-sk-helper /src/openssh/sshd /tmp/ssh/usr/bin/
+          ldd /tmp/ssh/usr/bin/ssh
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-openssh:main-scratch
+
+  # OpenSSH Stable Build in a `FROM scratch` final base image
+  opensshStableScratch:
+    build:
+      <<: *sourceStaticBuilder
+      args:
+        SOURCE_IMAGE: kristianfoss/source-openssh:stable-scratch
+        BUILD_IMAGE: alpine
+        SOURCE_PATH: /src/openssh
+        BINARY_NAME: ssh
+        BUILD_PKGS: automake autoconf pkgconfig openssl-libs-static openssl-dev zlib-dev zlib-static
+        SETUP_CMD: |
+          autoreconf
+          ./configure \
+            --prefix=/usr \
+            --with-zlib=/lib/zlib.a \
+            --with-ldflags=-static
+        BUILD_CMD: make -j$$(getconf _NPROCESSORS_ONLN)
+        POST_BUILD_CMD: |
+          mv /src/openssh/scp /src/openssh/sftp /src/openssh/sftp-server /src/openssh/ssh /src/openssh/ssh-add /src/openssh/ssh-agent /src/openssh/ssh-keygen /src/openssh/ssh-keyscan /src/openssh/ssh-keysign /src/openssh/ssh-pkcs11-helper /src/openssh/ssh-sk-helper /src/openssh/sshd /tmp/ssh/usr/bin/
+          ldd /tmp/ssh/usr/bin/ssh
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-openssh:stable-scratch
+
+  #
   # WireGuard Tools
   #
   # Website: https://github.com/WireGuard/wireguard-tools
@@ -926,11 +981,6 @@ services:
         BINARY_NAME: mono
     image: kristianfoss/programs-mono:cli-alpine
 
-  ##
-  ## SOURCE Images
-  ##
-  ##
-
   # iptablesSourceScratch:
   #   build:
   #     <<: *staticBuilder
@@ -969,7 +1019,6 @@ services:
         FETCH_CMD: |
           mkdir -p /tmp/src && cd /tmp/src/ && git clone -b master git://git.kernel.org/pub/scm/network/iproute2/iproute2.git
     image: kristianfoss/source-iproute2:scratch
-
   # SAMBA:
   #   build:
   #     <<: *gitStaticBuilder
@@ -986,7 +1035,6 @@ services:
   #       BUILD_PATH: /tmp/src/
   #       BUILD_CMD: 'make -j2'
   #   image: kristianfoss/programs-mtr:alpine
-
   # busyBoxGeneralAlpine:
   #   build:
   #     <<: *generalAlpineBuilder
@@ -996,86 +1044,62 @@ services:
   #       BUILD_PKGS: ''
   #       BUILD_PKG_ARGS: ''
   #       SRC_URL: 'https://codeload.github.com/mirror/busybox/tar.gz/master'
-
-  #
-  # KeyBase CLI
-  #
-  # Website:
-  # GitHub:
-  #
-
-  # keybaseAlpine:
-  #   image: kristianfoss/programs-keybase:alpine-client
+  # sshScratch:
   #   build:
-  #     <<: *simpleAlpineBuilder
+  #     <<: *opensshBuilder
   #     args:
-  #       PKG_ARGS: '--repository http://dl-cdn.alpinelinux.org/alpine/edge/testing'
-  #       PKGS: 'keybase-client gnupg'
-
-  sshScratch:
-    build:
-      <<: *opensshBuilder
-      args:
-        CLI_NAME: 'ssh'
-    image: kristianfoss/programs-openssh:scratch-ssh
-
+  #       CLI_NAME: 'ssh'
+  #   image: kristianfoss/programs-openssh:scratch-ssh
   # sshLabScratch:
   #   build:
   #     <<: *sshBuilder
   #     args:
   #       CLI_NAME: 'ssh'
   #   image: kristianfoss/programs-lab:scratch-ssh
-
   # ssh-keygenLabScratch:
   #   build:
   #     <<: *sshBuilder
   #     args:
   #       CLI_NAME: 'ssh-keygen'
   #   image: kristianfoss/programs-lab:scratch-ssh-keygen
-
-  sshdScratch:
-    build:
-      context: ./OpenSSH
-      target: sshd
-      args:
-        CLI_NAME: 'sshd'
-    image: kristianfoss/programs-openssh:scratch-sshd
-
-  sshdAlpine:
-    build:
-      context: ./OpenSSH
-      target: sshd
-      args:
-        CLI_NAME: 'sshd'
-        FINAL_BASE: 'alpine'
-    image: kristianfoss/programs-openssh:alpine-sshd
-
-  # monoScratch:
+  # sshdScratch:
   #   build:
-  #     context: ./Mono
-  #   image: kristianfoss/programs-mono:scratch
-
-  sshagentScratch:
-    build:
-      <<: *opensshBuilder
-      args:
-        CLI_NAME: 'ssh-agent'
-    image: kristianfoss/programs-openssh:scratch-ssh-agent
-    entrypoint: ['/usr/bin/ssh-agent', '-D', '-a']
-
-  sshaddScratch:
-    build:
-      <<: *opensshBuilder
-      args:
-        CLI_NAME: 'ssh-add'
-    image: kristianfoss/programs-openssh:scratch-ssh-add
-
-  sshkegenScratch:
-    build:
-      <<: *opensshBuilder
-      args:
-        CLI_NAME: 'ssh-keygen'
-    image: kristianfoss/programs-openssh:scratch-ssh-keygen
+  #     context: ./OpenSSH
+  #     target: sshd
+  #     args:
+  #       CLI_NAME: 'sshd'
+  #   image: kristianfoss/programs-openssh:scratch-sshd
+  # sshdAlpine:
+  #   build:
+  #     context: ./OpenSSH
+  #     target: sshd
+  #     args:
+  #       CLI_NAME: 'sshd'
+  #       FINAL_BASE: 'alpine'
+  #   image: kristianfoss/programs-openssh:alpine-sshd
+  # # monoScratch:
+  # #   build:
+  # #     context: ./Mono
+  # #   image: kristianfoss/programs-mono:scratch
+  # sshagentScratch:
+  #   build:
+  #     <<: *opensshBuilder
+  #     args:
+  #       CLI_NAME: 'ssh-agent'
+  #   image: kristianfoss/programs-openssh:scratch-ssh-agent
+  #   entrypoint: ['/usr/bin/ssh-agent', '-D', '-a']
+  # sshaddScratch:
+  #   build:
+  #     <<: *opensshBuilder
+  #     args:
+  #       CLI_NAME: 'ssh-add'
+  #   image: kristianfoss/programs-openssh:scratch-ssh-add
+  # sshkegenScratch:
+  #   build:
+  #     <<: *opensshBuilder
+  #     args:
+  #       CLI_NAME: 'ssh-keygen'
+  #   image: kristianfoss/programs-openssh:scratch-ssh-keygen
   # pritunlWeb:
   #   image: kristianfoss/lab/pritunl-web
   #   build:

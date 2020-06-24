@@ -344,3 +344,36 @@ services:
         FETCH_CMD: git clone --depth 1 -b go https://github.com/librespeed/speedtest
         SOURCE_PATH: /go/src/github.com/librespeed/speedtest
     image: kristianfoss/source-librespeed:go-scratch
+
+  #
+  # OpenSSH Source
+  #
+  # Website: https://www.openssh.com/
+  # GitHub: https://github.com/openssh/openssh-portable
+  # Docs: https://man.openbsd.org/ssh.1
+
+  # OpenSSH Main Source in a `FROM scratch` final base image
+  opensshMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/openssh/openssh-portable.git openssh
+        SOURCE_PATH: /src/openssh
+    image: kristianfoss/source-openssh:main-scratch
+
+    #
+  # OpenSSH Stable Source in a `FROM scratch` final base image
+  opensshStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        BUILD_PKGS: ack
+        FETCH_CWD: /src
+        FETCH_CMD: |
+          mkdir -p /src/openssh
+          export OPENSSH_VERSION=$$(wget -O - -q https://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/ | ack -o '(?<=>openssh-)\d{1,2}\.\d{1,2}p\d{1,2}' | tail -1)
+          echo "Getting OpenSSH Version $${OPENSSH_VERSION}"
+          wget -O - https://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-$${OPENSSH_VERSION}.tar.gz | tar xz -C /src/openssh --strip-components=1
+        SOURCE_PATH: /src/openssh
+    image: kristianfoss/source-openssh:stable-scratch

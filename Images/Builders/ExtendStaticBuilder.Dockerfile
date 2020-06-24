@@ -1,4 +1,5 @@
 ARG EXTEND_IMAGE='alpine'
+ARG ALPINE='alpine'
 ARG FINAL_BASE='alpine'
 ARG PREPARE_IMAGE='alpine'
 
@@ -22,12 +23,28 @@ RUN /bin/sh -c "${POST_CMD}"
 
 
 
+FROM ${ALPINE} as prepareUser 
+
+ARG USER=user
+ARG UID=1000
+
+ENV USER ${USER}
+ENV UID ${UID}
+
+RUN mkdir -p /tmp/out/etc \
+  && echo "${USER}:x:${UID}:${UID}::/nonexistent:/sbin/nologin" > /tmp/out/etc/passwd \
+  && echo "${USER}:x:${UID}:" > /tmp/out/etc/group
+
+
+
+
 FROM ${FINAL_BASE} 
 ARG BINARY_NAME
 ARG USER
 
+COPY --from=prepareUser /tmp/out /
 COPY --from=prepare /tmp/out /
 
 
-USER ${USER}
+USER ${USER}:${USER}
 ENTRYPOINT ["/usr/bin/entrypoint"]

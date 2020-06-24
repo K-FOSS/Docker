@@ -9,5 +9,5 @@ fi
 PROGRAM_SOURCE="${PROGRAM}SourceScratch"
 PROGRAM_IMAGE="${PROGRAM}Scratch"
 
-docker buildx bake -f ./docker-compose.build.source.yml ${PROGRAM_SOURCE}
+docker buildx bake -f ./docker-compose.build.source.yml ${PROGRAM_SOURCE} --progress plain
 docker buildx bake -f ./docker-compose.build.yml ${PROGRAM_IMAGE} --progress plain

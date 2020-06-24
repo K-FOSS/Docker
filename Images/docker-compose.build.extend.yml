@@ -260,3 +260,62 @@ services:
         POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./docker ./entrypoint
         FINAL_BASE: scratch
     image: kristianfoss/programs-docker:docker-cli-stable-scratch
+
+  #
+  # OpenSSH
+  #
+  # Website: https://www.openssh.com/
+  # GitHub: https://github.com/openssh/openssh-portable
+  # Docs: https://man.openbsd.org/ssh.1
+
+  # OpenSSH Main Build SSH CLI with a `FROM scratch` final base image
+  openSSHSSHMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-openssh:main-scratch
+        EXTEND_SRC_PATH: /usr/bin/ssh
+        EXTEND_DEST_PATH: /usr/bin/ssh
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./ssh ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-openssh:ssh-cli-main-scratch
+
+  # OpenSSH Main Build SSHD CLI with a `FROM scratch` final base image
+  openSSHSSHDMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-openssh:main-scratch
+        EXTEND_SRC_PATH: /usr/bin/sshd
+        EXTEND_DEST_PATH: /usr/bin/sshd
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./sshd ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-openssh:sshd-cli-main-scratch
+
+  # OpenSSH Stable build SSH CLI with a `FROM scratch` final base image
+  openSSHSSHStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-openssh:stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/ssh
+        EXTEND_DEST_PATH: /usr/bin/ssh
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./ssh ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-openssh:ssh-cli-stable-scratch
+
+  # OpenSSH stable build SSHD CLI with a `FROM scratch` final base image
+  openSSHSSHDStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND_IMAGE: kristianfoss/programs-openssh:stable-scratch
+        EXTEND_SRC_PATH: /usr/bin/sshd
+        EXTEND_DEST_PATH: /usr/bin/sshd
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./sshd ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-openssh:sshd-cli-stable-scratch
