@@ -1,4 +1,4 @@
-CLI_IMAGE="kristianfoss/programs-cloudflared:alpine"
+CLI_IMAGE="kristianfoss/programs-cloudflared:stable-scratch"
 
 CLI_NAME="cloudflared-cli"
 

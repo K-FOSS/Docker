@@ -6,19 +6,59 @@ x-extendStaticBuilder: &extendStaticBuilder
 
 services:
   #
+  # PGWeb
+  #
+  # Website: http://sosedoff.github.io/pgweb/
+  # GitHub: https://github.com/sosedoff/pgweb
+  # Docs: https://github.com/sosedoff/pgweb/wiki
+  #
+
+  # PGWeb Main Build CLI/Server with a `FROM alpine` final base image
+  pgWebMainAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-pgweb:pgweb-main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/pgweb ./pgweb
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./pgweb ./entrypoint
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-pgweb:pgweb-main-alpine
+
+  # PGWeb Stable Build CLI/Server with a `FROM alpine` final base image
+  pgWebStableAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-pgweb:pgweb-stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/pgweb ./pgweb
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./pgweb ./entrypoint
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-pgweb:pgweb-stable-alpine
+
+  #
   # CoreDNS
   #
   # Website: https://coredns.io/
   # GitHub: https://github.com/coredns/coredns
   # Docs: https://coredns.io/manual/toc/
   #
-  coreDNSAlpine:
+
+  # CoreDNS Main Branch build in a `FROM alpine` final base image
+  coreDNSMainAlpine:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-coredns:scratch
+        EXTEND1_IMAGE: kristianfoss/programs-coredns:coredns-main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/coredns ./coredns
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./coredns ./entrypoint
         FINAL_BASE: alpine
-    image: kristianfoss/programs-coredns:alpine
+    image: kristianfoss/programs-coredns:coredns-main-alpine
 
   #
   # Teleport SSH
@@ -27,40 +67,44 @@ services:
   # GitHub: https://github.com/gravitational/teleport
   # Docs: https://gravitational.com/teleport/docs/
   #
-  # Teleport CLI/Server with a `FROM alpine` final base image
-  teleportAlpine:
+  # Teleport CLI/Server built from main with a `FROM alpine` final base image
+  teleportMainAlpine:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-teleport:teleport-scratch
+        EXTEND1_IMAGE: kristianfoss/programs-teleport:teleport-main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/teleport ./teleport
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./teleport ./entrypoint
         FINAL_BASE: alpine
-    image: kristianfoss/programs-teleport:teleport-alpine
+    image: kristianfoss/programs-teleport:teleport-main-alpine
 
-  # Teleport TSH CLI with a `FROM alpine` final base image
-  teleportTSHAlpine:
+  # Teleport TSH CLI main built from main with a `FROM alpine` final base image
+  teleportTSHMainAlpine:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-teleport:teleport-scratch
+        EXTEND1_IMAGE: kristianfoss/programs-teleport:teleport-main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/tsh ./tsh
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tsh ./entrypoint
         FINAL_BASE: alpine
-        EXTEND_SRC_PATH: /usr/bin/tsh
-        EXTEND_DEST_PATH: /usr/bin/tsh
-        POST_CMD: |
-          ls -lah /tmp/out
-          cd /tmp/out/usr/bin/ && ln -s ./tsh ./cliLink
-    image: kristianfoss/programs-teleport:tsh-alpine
+    image: kristianfoss/programs-teleport:tsh-main-alpine
 
-  # Teleport TCTL CLI with a `FROM alpine` final base image
-  teleportTCTLAlpine:
+  # Teleport TCTL CLI Main built from main with a `FROM alpine` final base image
+  teleportTCTLMainAlpine:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-teleport:teleport-scratch
+        EXTEND1_IMAGE: kristianfoss/programs-teleport:teleport-main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/tctl ./tsh
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tctl ./entrypoint
         FINAL_BASE: alpine
-        EXTEND_SRC_PATH: /usr/bin/tctl
-        EXTEND_DEST_PATH: /usr/bin/tctl
-        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tctl ./cliLink
-    image: kristianfoss/programs-teleport:tctl-alpine
+    image: kristianfoss/programs-teleport:tctl-main-alpine
 
   #
   # Cloudflared
@@ -71,22 +115,26 @@ services:
   #
 
   # cloudflared CLI with a `FROM alpine` final base image
-  cloudflaredAlpine:
+  cloudflaredMainAlpine:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-cloudflared:scratch
+        EXTEND1_IMAGE: kristianfoss/programs-cloudflared:cloudflared-main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/cloudflared ./cloudflared
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./cloudflared ./entrypoint
         FINAL_BASE: alpine
-    image: kristianfoss/programs-cloudflared:cloudflared-alpine
+    image: kristianfoss/programs-cloudflared:cloudflared-main-alpine
 
   # cloudflared CLI with a `FROM scratch` final base image
-  cloudflaredScratch:
-    build:
-      <<: *extendStaticBuilder
-      args:
-        EXTEND_IMAGE: kristianfoss/programs-cloudflared:scratch
-        FINAL_BASE: scratch
-    image: kristianfoss/programs-cloudflared:cloudflared-scratch
+  # cloudflaredMainScratch:
+  #   build:
+  #     <<: *extendStaticBuilder
+  #     args:
+  #       EXTEND_IMAGE: kristianfoss/programs-cloudflared:scratch
+  #       FINAL_BASE: scratch
+  #   image: kristianfoss/programs-cloudflared:cloudflared-scratch
 
   #
   # Go MTR
@@ -104,21 +152,109 @@ services:
     image: kristianfoss/programs-gomtr:gomtr-alpine
 
   #
-  # PGWeb
+  # Hugo
   #
-  # Website: http://sosedoff.github.io/pgweb/
-  # GitHub: https://github.com/sosedoff/pgweb
-  # Docs: https://github.com/sosedoff/pgweb/wiki
+  # Website: https://gohugo.io/
+  # GitHub: https://github.com/gohugoio/hugo
+  # Docs: https://gohugo.io/documentation/
   #
 
-  # PGWeb CLI/Server with a `FROM alpine` final base image
-  pgWebAlpine:
+  hugoMainAlpine:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-pgweb:pgweb-scratch
+        EXTEND1_IMAGE: kristianfoss/programs-hugo:hugo-main-scratch
+        EXTEND1_CMD: |
+          ls -lah /usr/bin/
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/hugo ./hugo
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./hugo ./entrypoint
         FINAL_BASE: alpine
-    image: kristianfoss/programs-pgweb:pgweb-alpine
+    image: kristianfoss/programs-hugo:hugo-main-alpine
+
+  #
+  # YQ
+  #
+  # YAML Parser.
+  #
+  # Website: https://mikefarah.gitbook.io/yq/
+  # GitHub: https://github.com/mikefarah/yq
+  #
+  yqMainAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-yq:yq-main-scratch
+        EXTEND1_CMD: |
+          ls -lah /usr/bin/
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/yq ./yq
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./yq ./entrypoint
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-yq:yq-main-alpine
+
+  #
+  # Caddy
+  #
+  # Website: https://caddyserver.com/
+  # GitHub: https://github.com/google/cadvisor
+  #
+
+  caddyMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-caddy:caddy-build-main-scratch
+        EXTEND1_CMD: |
+          apk add libcap
+          ls -lah /usr/bin/
+          getcap /usr/bin/caddy 
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/caddy ./caddy
+        POST_CMD: |
+          apk add libcap
+          cd /tmp/out/usr/bin/ && ln -s ./caddy ./entrypoint && getcap ./entrypoint
+          getcap ./caddy
+
+          setcap 'cap_net_bind_service=+ep' ./caddy
+          getcap ./caddy
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-caddy:caddy-main-scratch
+
+  #
+  # Theia Web IDE
+  #
+  # Website: https://theia-ide.org/
+  # GitHub: https://github.com/eclipse-theia/theia
+  # Docs: https://theia-ide.org/docs/
+  #
+
+  theiaMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: node:10-alpine
+        EXTEND1_CMD: |
+          apk add --no-cache git
+          git clone -b master https://github.com/eclipse-theia/theia.git
+          cd theia
+
+          rm -rf ./package.json
+          wget -O package.json https://raw.githubusercontent.com/theia-ide/theia-apps/master/theia-docker/next.package.json
+          yarn --pure-lockfile
+          NODE_OPTIONS="--max_old_space_size=4096" yarn theia build
+          yarn theia download:plugins
+          yarn --production
+          yarn autoclean --init
+          echo *.ts >> .yarnclean
+          echo *.ts.map >> .yarnclean
+          echo *.spec.* >> .yarnclean
+          yarn autoclean --force
+
+          mkdir -p /tmp/out/usr/bin/
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s /usr/bin/node ./entrypoint
+        FINAL_BASE: astefanutti/scratch-node:10
+    image: kristianfoss/programs-theia:theia-main-alpine
 
   #
   # Step CLI
@@ -128,15 +264,61 @@ services:
   #
 
   # Step CLI with `FROM scratch` final base image
-  stepCLIScratch:
+  # stepCLIScratch:
+  #   build:
+  #     <<: *extendStaticBuilder
+  #     args:
+  #       EXTEND1_IMAGE: kristianfoss/programs-step:build-scratch
+  #       EXTEND_SRC_PATH: /usr/bin/step
+  #       EXTEND_DEST_PATH: /usr/bin/step
+  #       FINAL_BASE: scratch
+  #   image: kristianfoss/programs-step:cli-scratch
+
+  # #
+  # # ZSH
+  # #
+  # #
+  # #
+  # zshStableAlpine:
+  #   build:
+  #     <<: *extendStaticBuilder
+  #     args:
+  #       EXTEND_IMAGE: kristianfoss/programs-zsh:zsh-stable-scratch
+  #       EXTEND_SRC_PATH: /usr/bin/zsh
+  #       EXTEND_DEST_PATH: /usr/bin/zsh
+  #       EXTEND_SRC_PATH2: /.zshenv
+  #       EXTEND_DEST_PATH2: /.zshenv
+  #       EXTEND_SRC_PATH3: /etc/terminfo/x/xterm-256color
+  #       EXTEND_DEST_PATH3: /etc/terminfo/x/xterm-256color
+  #       POST_CMD: |
+  #         cd /tmp/out/usr/bin/ && ln -s ./zsh ./entrypoint
+  #       FINAL_BASE: alpine
+  #   image: kristianfoss/programs-zsh:zsh-stable-alpine
+
+  #
+  # CDR Code Server
+  #
+  # Website: https://coder.com/
+  # GitHub: https://github.com/cdr/code-server
+  # Docs:
+  #
+
+  codeserverDockerScratch:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-step:build-scratch
-        EXTEND_SRC_PATH: /usr/bin/step
-        EXTEND_DEST_PATH: /usr/bin/step
-        FINAL_BASE: scratch
-    image: kristianfoss/programs-step:cli-scratch
+        EXTEND1_IMAGE: kristianfoss/programs-codeserver:codeserver-main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./src
+          cp -R /src/release ./src/
+        EXTEND2_IMAGE: kristianfoss/programs-docker:docker-stable-scratch
+        EXTEND2_CMD: |
+          ls -lah /usr/bin
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/docker ./docker
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s /bin/node ./entrypoint && mkdir -p /tmp/out/etc && echo 'user:x:1000:1000::/config:/sbin/nologin' >> /tmp/out/etc/passwd
+        FINAL_BASE: node:alpine
+    image: kristianfoss/programs-codeserver:codeserver-docker-main-scratch
 
   #
   # Busybox Telnet
@@ -146,28 +328,65 @@ services:
   #
 
   # Busybox Telnet with a `FROM scratch` final base image
-  telnetScratch:
+  telnetStableScratch:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/telnet
-        EXTEND_DEST_PATH: /usr/bin/telnet
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/telnet ./telnet
         POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./telnet ./entrypoint
         FINAL_BASE: scratch
-    image: kristianfoss/programs-telnet:telnet-scratch
+        USER: user
+    image: kristianfoss/programs-telnet:telnet-stable-scratch
 
   # Busybox Telnet with a `FROM alpine` final base image
-  telnetAlpine:
+  telnetStableAlpine:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/telnet
-        EXTEND_DEST_PATH: /usr/bin/telnet
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/telnet ./telnet
         POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./telnet ./entrypoint
         FINAL_BASE: alpine
-    image: kristianfoss/programs-telnet:telnet-alpine
+        USER: user
+    image: kristianfoss/programs-telnet:telnet-stable-alpine
+
+  #
+  # Busybox TFTP
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#telnetd
+  #
+
+  # Telnetd CLI/Server with a `FROM scratch` final base image
+  telnetdStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/telnetd ./telnetd
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./telnetd ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-telnetd:telnetd-stable-scratch
+
+  # Telnetd CLI/Server with a `FROM scratch` final base image
+  telnetdStableAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/telnetd ./telnetd
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./telnetd ./entrypoint
+        FINAL_BASE: alpine
+    image: kristianfoss/programs-telnetd:telnetd-stable-alpine
 
   #
   # Busybox TFTP
@@ -175,26 +394,32 @@ services:
   # Website: https://busybox.net
   # Docs: https://busybox.net/downloads/BusyBox.html#tftp
   #
-  tftpScratch:
+
+  # Busybox tftp CLI with a `FROM scratch` final base image
+  tftpStableScratch:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/tftp
-        EXTEND_DEST_PATH: /usr/bin/tftp
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/tftp ./tftp
         POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tftp ./entrypoint
         FINAL_BASE: scratch
-    image: kristianfoss/programs-tftp:tftp-scratch
+        USER: user
+    image: kristianfoss/programs-tftp:tftp-stable-scratch
 
   tftpAlpine:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/tftp
-        EXTEND_DEST_PATH: /usr/bin/tftp
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/tftp ./tftp
         POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tftp ./entrypoint
-        FINAL_BASE: alpine
+        FINAL_BASE: scratch
+        USER: user
     image: kristianfoss/programs-tftp:tftp-alpine
 
   #
@@ -203,16 +428,18 @@ services:
   # Website: https://busybox.net
   # Docs: https://busybox.net/downloads/BusyBox.html#tftp
   #
-  tracerouteScratch:
+  tracerouteStableScratch:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/traceroute
-        EXTEND_DEST_PATH: /usr/bin/traceroute
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/traceroute ./traceroute
         POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./traceroute ./entrypoint
         FINAL_BASE: scratch
-    image: kristianfoss/programs-traceroute:traceroute-scratch
+        USER: user
+    image: kristianfoss/programs-traceroute:traceroute-stable-scratch
 
   #
   # Busybox nslookup
@@ -220,27 +447,220 @@ services:
   # Website: https://busybox.net
   # Docs: https://busybox.net/downloads/BusyBox.html#nslookup
   #
-  nslookupScratch:
+  nslookupStableScratch:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/nslookup
-        EXTEND_DEST_PATH: /usr/bin/nslookup
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/nslookup ./nslookup
         POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./nslookup ./entrypoint
         FINAL_BASE: scratch
-    image: kristianfoss/programs-nslookup:nslookup-scratch
+        USER: user
+    image: kristianfoss/programs-nslookup:nslookup-stable-scratch
 
-  nslookupAlpine:
+  nslookupStableAlpine:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/nslookup
-        EXTEND_DEST_PATH: /usr/bin/nslookup
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/nslookup ./nslookup
         POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./nslookup ./entrypoint
         FINAL_BASE: alpine
-    image: kristianfoss/programs-nslookup:nslookup-alpine
+        USER: user
+    image: kristianfoss/programs-nslookup:nslookup-stable-alpine
+
+  #
+  # Busybox Ping
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#ping
+  #
+  # pingScratch:
+  #   build:
+  #     <<: *extendStaticBuilder
+  #     args:
+  #       EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
+  #       EXTEND_SRC_PATH: /usr/bin/ping
+  #       EXTEND_DEST_PATH: /usr/bin/ping
+  #       POST_CMD: |
+  #         cd /tmp/out/usr/bin/ && ln -s ./ping ./entrypoint
+  #         apk add --no-cache libcap
+  #         setcap cap_net_raw+ep ./ping
+  #       FINAL_BASE: scratch
+  #       USER: root
+  #   image: kristianfoss/programs-ping:ping-scratch
+
+  # pingAlpine:
+  #   build:
+  #     <<: *extendStaticBuilder
+  #     args:
+  #       EXTEND_IMAGE: kristianfoss/programs-busybox:stable-scratch
+  #       EXTEND_SRC_PATH: /usr/bin/ping
+  #       EXTEND_DEST_PATH: /usr/bin/ping
+  #       POST_CMD: |
+  #         cd /tmp/out/usr/bin/ && ln -s ./ping ./entrypoint
+  #         apk add --no-cache libcap
+  #         setcap cap_net_raw+ep /tmp/out/usr/bin/ping
+  #       FINAL_BASE: alpine
+  #       USER: root
+  #   image: kristianfoss/programs-ping:ping-alpine
+
+  #
+  # Busybox chown
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#chown
+  #
+  chownScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/chown ./chown
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./chown ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-chown:chown-stable-scratch
+
+  chownAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/chown ./chown
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./chown ./entrypoint
+        FINAL_BASE: alpine
+        USER: user
+    image: kristianfoss/programs-chown:chown-stable-alpine
+
+  #
+  # Busybox ls
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#ls
+  #
+  lsScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ls ./ls
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./ls ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-ls:ls-stable-scratch
+
+  lsAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ls ./ls
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./ls ./entrypoint
+        FINAL_BASE: alpine
+        USER: user
+    image: kristianfoss/programs-ls:ls-stable-alpine
+
+  #
+  # Busybox touch
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#touch
+  #
+  touchScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/touch ./touch
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./touch ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-touch:touch-stable-scratch
+
+  #
+  # Busybox mkdir
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#mkdir
+  #
+  mkdirScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/mkdir ./mkdir
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./mkdir ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-mkdr:mkdir-stable-scratch
+
+  #
+  # Busybox grep
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#grep
+  #
+  grepScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/grep ./grep
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./grep ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-grep:grep-stable-scratch
+
+  #
+  # Busybox Tail
+  #
+  # Website: https://busybox.net
+  # Docs: https://busybox.net/downloads/BusyBox.html#grep
+  #
+  tailScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/tail ./tail
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tail ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-tail:tail-stable-scratch
+
+  tailAlpine:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-busybox:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/tail ./tail
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./tail ./entrypoint
+        FINAL_BASE: alpine
+        USER: user
+    image: kristianfoss/programs-tail:tail-stable-alpine
 
   #
   # Docker
@@ -249,17 +669,92 @@ services:
   # GitHub
   #
 
-  # Docker Stable Static Binaries with a `FROM scratch` final base image
+  #
+  # Docker CLI
+  #
+
+  # Docker Stable CLI with a `FROM scratch` final base image
   dockerCLIStableScratch:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-docker:docker-stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/docker
-        EXTEND_DEST_PATH: /usr/bin/docker
+        EXTEND1_IMAGE: kristianfoss/programs-docker:docker-stable-scratch
+        EXTEND1_CMD: |
+          ls -lah /usr/bin
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/docker ./docker
         POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./docker ./entrypoint
         FINAL_BASE: scratch
+        USER: user
     image: kristianfoss/programs-docker:docker-cli-stable-scratch
+
+  #
+  # Dockerd
+  #
+  dockerdCLIStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-docker:docker-stable-scratch
+        EXTEND1_CMD: |
+          ls -lah /usr/bin
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/docker ./docker
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./docker ./entrypoint
+        FINAL_BASE: scratch
+        USER: user
+    image: kristianfoss/programs-docker:dockerd-cli-stable-scratch
+
+  # Docker Stable CLI with a `FROM alpine` final base image
+  # dockerCLIStableAlpine:
+  #   build:
+  #     <<: *extendStaticBuilder
+  #     args:
+  #       EXTEND_IMAGE: kristianfoss/programs-docker:docker-stable-scratch
+  #       EXTEND_SRC_PATH: /usr/bin/docker
+  #       EXTEND_DEST_PATH: /usr/bin/docker
+  #       POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./docker ./entrypoint
+  #       FINAL_BASE: alpine
+  #   image: kristianfoss/programs-docker:docker-cli-stable-scratch
+
+  #
+  # Rootless Docker in Docker
+  #
+  #
+  rootlessDockerMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-docker:docker-stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/docker /usr/bin/dockerd /usr/bin/containerd /usr/bin/vpnkit /usr/bin/docker-init /usr/bin/runc /usr/bin/containerd-shim  ./
+        EXTEND2_IMAGE: kristianfoss/programs-iptables:iptables-stable-scratch
+        EXTEND2_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/iptables ./
+        EXTEND3_IMAGE: kristianfoss/program-iproute2:ip-main-scratch
+        EXTEND3_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ip ./
+          ldd ./ip
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./rootlesskit ./entrypoint
+          mkdir -p /tmp/out/tmp
+          chmod 1777 /tmp/out/tmp
+          mkdir -p /tmp/out/run/user 
+          chmod 1777 /tmp/out/run/user
+          mkdir -p /tmp/out/run/docker
+          chmod 1777 /tmp/out/run/docker
+          mkdir -p /tmp/out/home/user
+          mkdir -p /tmp/out/home/user/.local/share/docker
+          chown -R 1000:1000 /tmp/out/home/user
+          mkdir -p /tmp/out/etc
+          echo 'root:0:0::/root:/bin/sh' >> /tmp/out/etc/passwd
+          echo 'user:x:1000:1000:User:/home/user:/bin/ash' >> /tmp/out/etc/passwd
+        FINAL_BASE: kristianfoss/programs-rootlesskit:rootless-scratch
+        USER: user
+    image: kristianfoss/programs-docker:dockerd-rootless-main-scratch
 
   #
   # OpenSSH
@@ -267,55 +762,250 @@ services:
   # Website: https://www.openssh.com/
   # GitHub: https://github.com/openssh/openssh-portable
   # Docs: https://man.openbsd.org/ssh.1
+  #
+
+  #
+  # SSH CLI
+  #
 
   # OpenSSH Main Build SSH CLI with a `FROM scratch` final base image
   openSSHSSHMainScratch:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-openssh:main-scratch
-        EXTEND_SRC_PATH: /usr/bin/ssh
-        EXTEND_DEST_PATH: /usr/bin/ssh
-        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./ssh ./entrypoint
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh ./ssh
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh ./entrypoint
         FINAL_BASE: scratch
-        USER: user
     image: kristianfoss/programs-openssh:ssh-cli-main-scratch
-
-  # OpenSSH Main Build SSHD CLI with a `FROM scratch` final base image
-  openSSHSSHDMainScratch:
-    build:
-      <<: *extendStaticBuilder
-      args:
-        EXTEND_IMAGE: kristianfoss/programs-openssh:main-scratch
-        EXTEND_SRC_PATH: /usr/bin/sshd
-        EXTEND_DEST_PATH: /usr/bin/sshd
-        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./sshd ./entrypoint
-        FINAL_BASE: scratch
-        USER: user
-    image: kristianfoss/programs-openssh:sshd-cli-main-scratch
 
   # OpenSSH Stable build SSH CLI with a `FROM scratch` final base image
   openSSHSSHStableScratch:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-openssh:stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/ssh
-        EXTEND_DEST_PATH: /usr/bin/ssh
-        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./ssh ./entrypoint
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh ./ssh
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh ./entrypoint
         FINAL_BASE: scratch
-        USER: user
     image: kristianfoss/programs-openssh:ssh-cli-stable-scratch
+
+  #
+  # SSHD CLI
+  #
+
+  # OpenSSH main build SSHD CLI with a `FROM scratch` final base image
+  openSSHSSHDMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/sshd ./sshd
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./sshd ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:sshd-cli-main-scratch
 
   # OpenSSH stable build SSHD CLI with a `FROM scratch` final base image
   openSSHSSHDStableScratch:
     build:
       <<: *extendStaticBuilder
       args:
-        EXTEND_IMAGE: kristianfoss/programs-openssh:stable-scratch
-        EXTEND_SRC_PATH: /usr/bin/sshd
-        EXTEND_DEST_PATH: /usr/bin/sshd
-        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./sshd ./entrypoint
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/sshd ./sshd
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./sshd ./entrypoint
         FINAL_BASE: scratch
-        USER: user
+    image: kristianfoss/programs-openssh:sshd-cli-stable-scratch
+
+  #
+  # SSH Keygen CLI
+  #
+
+  # OpenSSH Main Build SSH-Keygen CLI with a `FROM scratch` final base image
+  openSSHSSHKeygenMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-keygen ./ssh-keygen
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-keygen ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-keygen-cli-main-scratch
+
+  # OpenSSH stable build SSH-Keygen CLI with a `FROM scratch` final base image
+  openSSHKeygenStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-keygen ./ssh-keygen
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-keygen ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-keygen-cli-stable-scratch
+
+  #
+  # SSH Add CLI
+  #
+
+  # OpenSSH Main Build SSH-Add CLI with a `FROM scratch` final base image
+  openSSHSSHAddMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-add ./ssh-add
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-add ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-add-cli-main-scratch
+
+  # OpenSSH Stable Build SSH-Add CLI with a `FROM scratch` final base image
+  openSSHSSHAddStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-add ./ssh-add
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-add ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-add-cli-stable-scratch
+
+  #
+  # SSH Agent CLI
+  #
+
+  # OpenSSH Main Build SSH-Agent CLI with a `FROM scratch` final base image
+  openSSHSSHAgentMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-agent ./ssh-agent
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-agent ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-agent-cli-main-scratch
+
+  # OpenSSH Stable Build SSH-Agent CLI with a `FROM scratch` final base image
+  openSSHSSHAgentStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-agent ./ssh-agent
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-agent ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-agent-cli-stable-scratch
+
+  #
+  # SSH Keyscan CLI
+  #
+
+  # OpenSSH Main Build SSH-keyscan CLI with a `FROM zscratch` final base image
+  openSSHSSHKeyScanMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          ls -lah /usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-keyscan ./ssh-keyscan
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-keyscan ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-keyscan-cli-main-scratch
+
+  # OpenSSH Stable Build SSH-keyscan CLI with a `FROM zscratch` final base image
+  openSSHSSHKeyScanStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          ls -lah /usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-keyscan ./ssh-keyscan
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-keyscan ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-keyscan-cli-stable-scratch
+
+  #
+  # SSH Keysign CLI
+  #
+
+  # OpenSSH Main Build SSH-Keysign CLI with a `FROM scratch` final base image
+  openSSHSSHKeySignMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          ls -lah /usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-keysign ./ssh-keysign
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-keysign ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-keysign-cli-main-scratch
+
+  # OpenSSH Stable Build SSH-Keysign CLI with a `FROM scratch` final base image
+  openSSHSSHKeySignStableScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/programs-openssh:stable-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          ls -lah /usr/bin
+          cd ./usr/bin && mv /usr/bin/ssh-keysign ./ssh-keysign
+        POST_CMD: |
+          cd /tmp/out/usr/bin/ && ln -s ./ssh-keysign ./entrypoint
+        FINAL_BASE: scratch
+    image: kristianfoss/programs-openssh:ssh-keysign-cli-stable-scratch
+
+  #
+  # Bagisto
+  #
+  # Website: https://bagisto.com/
+  # GitHub: https://github.com/bagisto/bagisto
+  #
+  bagistoMainScratch:
+    build:
+      <<: *extendStaticBuilder
+      args:
+        EXTEND1_IMAGE: kristianfoss/source-bagisto:main-scratch
+        EXTEND1_CMD: |
+          mkdir -p ./usr/bin
+          cd ./usr/bin && mv /usr/bin/pgweb ./pgweb
+        POST_CMD: cd /tmp/out/usr/bin/ && ln -s ./pgweb ./entrypoint
+        FINAL_BASE: alpine
     image: kristianfoss/programs-openssh:sshd-cli-stable-scratch

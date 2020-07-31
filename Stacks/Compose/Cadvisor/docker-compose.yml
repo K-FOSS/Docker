@@ -19,7 +19,7 @@ services:
       - 8080:8080
 
   Cadvisor:
-    image: kristianfoss/programs-cadvisor:cli-main-scratch
+    image: kristianfoss/programs-cadvisor:cadvisor-main-scratch
     restart: unless-stopped
     command: ['-logtostderr', '-docker_only']
     user: root

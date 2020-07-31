@@ -19,7 +19,7 @@ services:
       - 8080:8080
 
   Prometheus:
-    image: kristianfoss/programs-prometheus:prometheus-scratch
+    image: kristianfoss/programs-prometheus:prometheus-main-scratch
     restart: unless-stopped
     command:
       [

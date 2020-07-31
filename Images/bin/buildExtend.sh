@@ -8,4 +8,4 @@ if [[ "${PROGRAM}" == "" ]]; then
   exit 1
 fi
 
-docker buildx bake -f ${EXTEND_FILE} ${PROGRAM}
+docker buildx bake -f ${EXTEND_FILE} ${PROGRAM} --progress plain --no-cache
