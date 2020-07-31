@@ -1,0 +1,32 @@
+version: '3.8'
+
+volumes:
+  prometheusData:
+
+networks:
+  publicWeb:
+
+services:
+  Web:
+    image: caddy/caddy:scratch
+    restart: unless-stopped
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
+    volumes:
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
+    networks:
+      - publicWeb
+    ports:
+      - 8080:8080
+
+  Netdata:
+    image: kristianfoss/programs-netdata:netdata-scratch
+    restart: unless-stopped
+    command: ['-D', '-u=user']
+    volumes:
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - publicWeb

@@ -1,0 +1,33 @@
+version: '3.8'
+
+volumes:
+  prometheusData:
+
+networks:
+  publicWeb:
+
+services:
+  Web:
+    image: caddy/caddy:scratch
+    restart: unless-stopped
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
+    volumes:
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
+    networks:
+      - publicWeb
+    ports:
+      - 8080:8080
+
+  Prometheus:
+    image: kristianfoss/programs-prometheus:prometheus-main-scratch
+    restart: unless-stopped
+    command:
+      [
+        '--storage.tsdb.path=/data',
+        '--config.file=/etc/prometheus/prometheus.yml',
+      ]
+    volumes:
+      - prometheusData:/data
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - publicWeb

@@ -1,0 +1,16 @@
+version: '3.8'
+
+networks:
+  publicWeb:
+
+services:
+  Web:
+    image: kristianfoss/programs-caddy:caddy-auth-main-scratch
+    command: ['run', '--config', '/etc/caddy/Caddyfile.json']
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
+    networks:
+      - publicWeb
+    ports:
+      - 8080:8080

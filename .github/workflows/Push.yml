@@ -5,15 +5,16 @@ on:
     branches:
       - master
   # schedule:
-  #   # * is a special character in YAML so you have to quote this string
+  #   #   # * is a special character in YAML so you have to quote this string
   #   - cron: '* 23 * * *'
 
 jobs:
   Test:
-    name: Test
+    name: Build Images
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - name: Build Images
         run: ./bin/buildPush.sh
         working-directory: ./Images

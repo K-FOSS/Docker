@@ -37,7 +37,7 @@ ENTRYPOINT [ "/usr/bin/dockerd" ]
 
 FROM ${ALPINE} as docker
 RUN mkdir -p /root/.docker/cli-plugins \
-  && wget -O /root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64  \
+  && wget -O /root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.4.1/buildx-v0.4.1.linux-amd64  \
   && chmod +x /root/.docker/cli-plugins/docker-buildx
 
 COPY ./config.json /root/.docker/config.json

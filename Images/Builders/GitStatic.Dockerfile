@@ -59,9 +59,11 @@ RUN /bin/sh -c "${POST_CMD}"
 
 FROM ${FINAL_BASE}
 ARG BINARY_NAME
-ARG USER
 
 COPY --from=builder /tmp/${BINARY_NAME} /
 
-USER ${USER}
+
+ARG USER
+USER ${USER}:${USER}
+
 ENTRYPOINT ["/usr/bin/cliLink"]

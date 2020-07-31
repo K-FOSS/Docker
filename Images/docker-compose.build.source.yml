@@ -1,0 +1,889 @@
+version: '3.8'
+
+x-sourcecBuilder: &sourceBuilder
+  context: ./Builders/
+  dockerfile: SourceBuilder.Dockerfile
+
+services:
+  #
+  # PGWeb
+  #
+  # Website: http://sosedoff.github.io/pgweb/
+  # GitHub: https://github.com/sosedoff/pgweb
+  # Docs: https://github.com/sosedoff/pgweb/wiki
+  #
+
+  # PGWeb Main Branch in a `FROM scratch` final base image
+  pgWebMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/sosedoff
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/sosedoff/pgweb.git
+        SOURCE_PATH: /go/src/github.com/sosedoff/pgweb
+    image: kristianfoss/source-pgweb:main-scratch
+
+  # PGWeb Main Branch in a `FROM scratch` final base image
+  pgWebStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/sosedoff
+        FETCH_PKGS: jq
+        FETCH_CMD: |
+          export TAG=$$(wget -O - https://api.github.com/repos/sosedoff/pgweb/releases/latest | jq -r '.tag_name')
+          git clone --depth 1 -b $${TAG} https://github.com/sosedoff/pgweb.git
+        SOURCE_PATH: /go/src/github.com/sosedoff/pgweb
+    image: kristianfoss/source-pgweb:stable-scratch
+
+  #
+  # CoreDNS
+  #
+  # Website: https://coredns.io/
+  # GitHub: https://github.com/coredns/coredns
+  # Docs: https://coredns.io/manual/toc/
+  #
+
+  # CoreDNS Main Branch Source Output in `FROM scratch`
+  coreDNSMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/coredns
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/coredns/coredns
+        SOURCE_PATH: /go/src/github.com/coredns/coredns
+    image: kristianfoss/source-coredns:main-scratch
+
+  # CoreDNS Stable Source Output in `FROM scratch`
+  coreDNSStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/coredns
+        FETCH_PKGS: jq
+        FETCH_CMD: |
+          export TAG=$$(wget -O - https://api.github.com/repos/coredns/coredns/releases/latest | jq -r '.tag_name')
+          git clone --depth 1 -b $${TAG} https://github.com/coredns/coredns
+        SOURCE_PATH: /go/src/github.com/coredns/coredns
+    image: kristianfoss/source-coredns:stable-scratch
+
+  #
+  # Teleport SSH
+  #
+  # Website: https://gravitational.com/teleport
+  # GitHub: https://github.com/gravitational/teleport
+  # Docs: https://gravitational.com/teleport/docs/
+  #
+
+  teleportMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/gravitational
+        FETCH_CMD: git clone -b master https://github.com/gravitational/teleport
+        SOURCE_PATH: /go/src/github.com/gravitational/teleport
+    image: kristianfoss/source-teleport:main-scratch
+
+  # Teleport Stable Source Output in `FROM scratch`
+  teleportStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/gravitational
+        FETCH_PKGS: jq
+        FETCH_CMD: |
+          export TAG=$$(wget -O - https://api.github.com/repos/gravitational/teleport/releases/latest | jq -r '.tag_name')
+          git clone --depth 1 -b $${TAG} https://github.com/gravitational/teleport
+        SOURCE_PATH: /go/src/github.com/gravitational/teleport
+    image: kristianfoss/source-teleport:stable-scratch
+
+  #
+  # Cloudflared
+  #
+  # Website: https://developers.cloudflare.com/argo-tunnel/
+  # GitHub: https://github.com/cloudflare/cloudflared
+  # Docs: https://developers.cloudflare.com/argo-tunnel/quickstart
+  #
+
+  # Cloudflared Main Source in a `FROM scratch` final base image
+  cloudflaredMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/cloudflare
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/cloudflare/cloudflared
+        SOURCE_PATH: /go/src/github.com/cloudflare/cloudflared
+    image: kristianfoss/source-cloudflared:main-scratch
+
+  # Cloudflared Latest "Stable" tag in a `FROM scratch` final base image
+  cloudflaredStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/cloudflare
+        BUILD_PKGS: jq
+        FETCH_CMD: |
+          export TAG=$$(wget -O - https://api.github.com/repos/cloudflare/cloudflared/tags | jq -r '.[0].name')
+          git clone --depth 1 -b $${TAG} https://github.com/cloudflare/cloudflared
+        SOURCE_PATH: /go/src/github.com/cloudflare/cloudflared
+    image: kristianfoss/source-cloudflared:stable-scratch
+
+  #
+  # MTR Written in GO
+  #
+  # GitHub: https://github.com/tonobo/mtr
+  #
+
+  # Go MTR Main Source in a `FROM scratch` final base image
+  goMTRMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/tonobo
+        FETCH_CMD: git clone -b master https://github.com/tonobo/mtr.git
+        SOURCE_PATH: /go/src/github.com/tonobo/mtr
+    image: kristianfoss/source-gomtr:main-scratch
+
+  # Go MTR Stable Source in a `FROM scratch` final base image
+  goMTRStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/tonobo
+        BUILD_PKGS: jq
+        FETCH_CMD: |
+          export TAG=$$(wget -O - https://api.github.com/repos/tonobo/mtr/tags | jq -r '.[0].name')
+          git clone --depth 1 -b $${TAG} https://github.com/tonobo/mtr
+        SOURCE_PATH: /go/src/github.com/tonobo/mtr
+    image: kristianfoss/source-gomtr:stable-scratch
+
+  #
+  # Git
+  #
+  # Website: https://git-scm.com/
+  # GitHub: https://github.com/git/git
+  # Docs: https://git-scm.com/doc
+
+  # Git Main Source in a `FROM scratch` final base image
+  gitMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src
+        FETCH_CMD: git clone -b master https://github.com/git/git.git
+        SOURCE_PATH: /src/git
+    image: kristianfoss/source-git:main-scratch
+
+  #
+  # Hugo
+  #
+  # Website: https://gohugo.io/
+  # GitHub: https://github.com/gohugoio/hugo
+  # Docs: https://gohugo.io/documentation/
+  #
+
+  # Hugo Main Source in a `FROM scratch` final base image
+  hugoMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/gohugoio
+        FETCH_CMD: git clone -b master https://github.com/gohugoio/hugo.git
+        SOURCE_PATH: /go/src/github.com/gohugoio/hugo
+    image: kristianfoss/source-hugo:main-scratch
+
+  #
+  # Theia Web IDE
+  #
+  # Website: https://theia-ide.org/
+  # GitHub: https://github.com/eclipse-theia/theia
+  # Docs: https://theia-ide.org/docs/
+  #
+
+  # Theia Main Source in a `FROM scratch` final base image
+  theiaMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src
+        FETCH_CMD: git clone -b master https://github.com/eclipse-theia/theia.git
+        SOURCE_PATH: /src/theia
+    image: kristianfoss/source-theia:main-scratch
+
+  #
+  # YQ
+  #
+  # YAML Parser.
+  #
+  # Website: https://mikefarah.gitbook.io/yq/
+  # GitHub: https://github.com/mikefarah/yq
+  #
+
+  # YQ Main source in a `FROM scratch` final base image
+  yqMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/mikefarah
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/mikefarah/yq.git
+        SOURCE_PATH: /go/src/github.com/mikefarah/yq
+    image: kristianfoss/source-yq:main-scratch
+
+  #
+  # Docker
+  #
+  # Website: https://docker.com
+  #
+
+  # Docker Static Binaries in a `FROM scratch` final base image
+  dockerStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src/
+        BUILD_PKGS: ack
+        FETCH_CMD: |
+          mkdir -p /src/docker
+          export DOCKER_VERSION=$$(wget -O - -q https://download.docker.com/linux/static/stable/x86_64/ | ack -o '(?<=>docker-)\d{2}\.\d{2}\.\d{1}' | tail -1)
+          echo "Getting Docker $$DOCKER_VERSION"
+          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1
+          wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-rootless-extras-$${DOCKER_VERSION}.tgz | tar xz -C /src/docker --strip-components=1
+        SOURCE_PATH: /src/docker
+    image: kristianfoss/source-docker:stable-scratch
+
+  #
+  # IPRoute2
+  #
+
+  iproute2MainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src
+        FETCH_CMD: git clone --depth 1 -b master git://git.kernel.org/pub/scm/network/iproute2/iproute2.git
+        SOURCE_PATH: /src/iproute2
+    image: kristianfoss/source-iproute2:main-scratch
+
+  #
+  # IPTables
+  #
+  #
+  #
+
+  # IPTables source in a `FROM scratch` final base image
+  iptablesStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src/
+        BUILD_PKGS: ack
+        FETCH_CMD: |
+          mkdir -p /src/iptables
+          export IPTABLES_VERSION=$$(wget -O - -q https://www.netfilter.org/projects/iptables/files/ | ack -o '(?<=>iptables-)\d{1}\.\d{1}\.\d{1}' | tail -1)
+          echo "Getting IPTables $$IPTABLES_VERSION"
+          wget -O - https://www.netfilter.org/projects/iptables/files/iptables-$${IPTABLES_VERSION}.tar.bz2 | tar xj -C /src/iptables --strip-components=1
+        SOURCE_PATH: /src/iptables
+    image: kristianfoss/source-iptables:stable-scratch
+
+  #
+  # Rootless Kit Source
+  #
+  rootlessKitMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/rootless-containers
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/rootless-containers/rootlesskit.git
+        SOURCE_PATH: /go/src/github.com/rootless-containers/rootlesskit
+    image: kristianfoss/source-rootlesskit:main-scratch
+
+  #
+  # Rootless Kit Source
+  #
+  vpnKitMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/moby
+        FETCH_CMD:
+        SOURCE_PATH: /go/src/github.com/moby/vpnkit
+    image: kristianfoss/programs-vpnkit:main-scratch
+
+  #
+  # Keybase CLI
+  #
+  # Website: https://keybase.io
+  # GitHub: https://github.com/keybase/cli
+  #
+
+  keybaseSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/keybase
+        FETCH_CMD: git clone --depth 1 -b v5.2.1 https://github.com/keybase/client.git
+        SOURCE_PATH: /go/src/github.com/keybase/client
+    image: kristianfoss/source-keybase:master-scratch
+
+  #
+  # Step CLI
+  #
+  # Website: https://smallstep.com/cli/
+  # GitHub: https://github.com/smallstep/cli
+  #
+  # Step CLI with `FROM scratch` final base image
+  stepMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/smallstep
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/smallstep/cli.git
+        SOURCE_PATH: /go/src/github.com/smallstep/cli
+    image: kristianfoss/source-step-cli:main-scratch
+
+  #
+  # Step Certificates
+  #
+  # Website: https://smallstep.com/certificates/
+  # GitHub: https://github.com/smallstep/certificates
+  #
+  # Step Certificates Source with `FROM scratch` final base image
+  stepCertificatesMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/smallstep
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/smallstep/certificates.git
+        SOURCE_PATH: /go/src/github.com/smallstep/certificates
+    image: kristianfoss/source-step-certificates:main-scratch
+
+  #
+  # Photoprism
+  #
+  #
+
+  photoPrismMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/photoprism
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/photoprism/photoprism.git
+        SOURCE_PATH: /go/src/github.com/photoprism/photoprism
+    image: kristianfoss/source-photoprism:main-scratch
+
+  #
+  # Mono
+  #
+  # Website: https://www.mono-project.com/
+  # GitHub: https://github.com/mono/mono
+  # Docs: https://www.mono-project.com/docs/
+  #
+
+  # mono5SourceScratch:
+  #   build:
+  #     <<: *sourceBuilder
+  #     args:
+  #       BUILD_PKGS: ack
+  #       FETCH_CWD: /src
+  #       FETCH_CMD: |
+  #         mkdir -p /src/mono
+  #         export MONO_VERSION=$$(wget -O - -q https://download.mono-project.com/sources/mono/ | ack -o '(?<=>mono-)5\.\d{1,2}\.\d{1}\.\d{1,2}' | tail -1)
+  #         echo "Getting Mono Version $${MONO_VERSION}"
+  #         wget -O - https://download.mono-project.com/sources/mono/mono-$${MONO_VERSION}.tar.bz2 | tar xj -C /src/mono --strip-components=1
+  #         wget -O /src/mono/python3.patch https://git.alpinelinux.org/aports/plain/testing/mono/python3.patch
+  #       SOURCE_PATH: /src/mono
+  #   image: kristianfoss/source-mono:5-scratch
+
+  envoyMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/envoyproxy/envoy.git
+        SOURCE_PATH: /src/envoy
+    image: kristianfoss/source-envoy:main-scratch
+
+  #
+  # Pomerium
+  #
+  # Website: https://www.pomerium.io/
+  # GitHub: https://github.com/pomerium/pomerium
+  # Docs: https://www.pomerium.io/docs/
+  #
+  # pomeriumMainSourceScratch:
+  #   build:
+  #     <<: *sourceBuilder
+  #     args:
+  #       FETCH_CWD: /go/src/github.com/pomerium
+  #       FETCH_CMD: git clone -b master https://github.com/pomerium/pomerium.git
+  #       SOURCE_PATH: /go/src/github.com/pomerium/pomerium
+  #   image: kristianfoss/source-pomerium:main-scratch
+
+  #
+  # Prometheus
+  #
+  # Website: https://prometheus.io/
+  # Repo: https://github.com/prometheus/prometheus
+  # Docs: https://prometheus.io/docs/introduction/overview/
+  #
+
+  # Prometheus Main source in a `FROM scratch` final base image
+  prometheusMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/prometheus
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/prometheus/prometheus.git
+        SOURCE_PATH: /go/src/github.com/prometheus/prometheus
+    image: kristianfoss/source-prometheus:main-scratch
+
+  # Prometheus Main source in a `FROM scratch` final base image
+  prometheusStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/prometheus
+        FETCH_PKGS: jq
+        FETCH_CMD: |
+          export TAG=$$(wget -O - https://api.github.com/repos/prometheus/prometheus/releases/latest | jq -r '.tag_name')
+          git clone --depth 1 -b $${TAG} https://github.com/prometheus/prometheus.git
+        SOURCE_PATH: /go/src/github.com/prometheus/prometheus
+    image: kristianfoss/source-prometheus:stable-scratch
+
+  #
+  # Prometheus Alert Manager
+  #
+  # Website: https://github.com/prometheus/alertmanager
+  # Docs: https://github.com/prometheus/alertmanager#example
+  #
+
+  # Prometheus AlertManager Main Source in a `FROM scratch` final base image
+  prometheusAlertManagerMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/prometheus
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/prometheus/alertmanager.git
+        SOURCE_PATH: /go/src/github.com/prometheus/alertmanager
+    image: kristianfoss/source-prometheus-alertmanager:main-scratch
+
+  # Prometheus Alert Manager Main source in a `FROM scratch` final base image
+  prometheusAlertManagerStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/prometheus
+        FETCH_PKGS: jq
+        FETCH_CMD: |
+          export TAG=$$(wget -O - https://api.github.com/repos/prometheus/alertmanager/releases/latest | jq -r '.tag_name')
+          git clone --depth 1 -b $${TAG} https://github.com/prometheus/alertmanager.git
+        SOURCE_PATH: /go/src/github.com/prometheus/alertmanager
+    image: kristianfoss/source-prometheus-alertmanager:stable-scratch
+
+  #
+  # Unsee
+  #
+  # Dashboard for AlertManager
+  #
+  # Website:
+  # GitHub:
+  # Docs:
+  #
+
+  # Unsee Main source in a `FROM scratch` final base image
+  unseeMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/prometheus
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/prometheus/alertmanager.git
+        SOURCE_PATH: /go/src/github.com/prometheus/alertmanager
+    image: kristianfoss/source-prometheus-alertmanager:main-scratch
+
+  #
+  # Node Exporter
+  #
+  # Website: https://github.com/prometheus/node_exporter
+  # Docs:
+  prometheusNodeExporterMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/prometheus
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/prometheus/node_exporter.git
+        SOURCE_PATH: /go/src/github.com/prometheus/node_exporter
+    image: kristianfoss/source-prometheus-node-exporter:main-scratch
+
+  #
+  # Plex Prometheus Exporter
+  #
+  # Website: https://github.com/arnarg/plex_exporter
+  #
+
+  plexPrometheusExporterMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/arnarg
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/arnarg/plex_exporter.git
+        SOURCE_PATH: /go/src/github.com/arnarg/plex_exporter
+    image: kristianfoss/source-plex-prometheus-exporter:main-scratch
+
+  #
+  # Blackbox Prometheus Exporter
+  #
+  # Website: https://github.com/prometheus/blackbox_exporter
+  # Docs: https://github.com/prometheus/blackbox_exporter/blob/master/CONFIGURATION.md
+  #
+
+  # Blackbox Prometheus Exporter in a `FROM scratch` final base image
+  blackboxPrometheusExporterMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/prometheus
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/prometheus/blackbox_exporter.git
+        SOURCE_PATH: /go/src/github.com/prometheus/blackbox_exporter
+    image: kristianfoss/source-blackbox-prometheus-exporter:main-scratch
+
+  #
+  # StatsD Prometheus Exporter
+  #
+  # Website: https://github.com/prometheus/statsd_exporter
+  # Docs: https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration
+  #
+  statsdPrometheusExporterMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/prometheus
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/prometheus/statsd_exporter.git
+        SOURCE_PATH: /go/src/github.com/prometheus/statsd_exporter
+    image: kristianfoss/source-statsd-prometheus-exporter:main-scratch
+
+  #
+  # Graphite Prometheus Exporter
+  #
+  # Website: https://github.com/prometheus/graphite_exporter
+  # Docs: https://github.com/prometheus/graphite_exporter#metric-mapping-and-configuration
+  #
+
+  graphitePrometheusExporterMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/prometheus
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/prometheus/graphite_exporter.git
+        SOURCE_PATH: /go/src/github.com/prometheus/graphite_exporter
+    image: kristianfoss/source-graphite-prometheus-exporter:main-scratch
+
+  #
+  # Netdata Source
+  #
+  # Website: https://www.netdata.cloud/
+  # GitHub: https://github.com/netdata/netdata.git
+  # Docs: https://learn.netdata.cloud/docs/agent
+  #
+  netdataSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/netdata/netdata.git
+        SOURCE_PATH: /src/netdata
+    image: kristianfoss/source-netdata:master-scratch
+
+  #
+  # Cadvisor Source
+  #
+
+  # GitHub: https://github.com/google/cadvisor
+  # Docs:
+  #
+  cadvisorMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/google
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/google/cadvisor
+        SOURCE_PATH: /go/src/github.com/google/cadvisor
+    image: kristianfoss/source-cadvisor:main-scratch
+
+  #
+  # Caddy Source
+  #
+  # Website: https://caddyserver.com/
+  # GitHub: https://github.com/google/cadvisor
+  #
+  caddyMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/caddyserver
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/caddyserver/caddy
+        SOURCE_PATH: /go/src/github.com/caddyserver/caddy
+    image: kristianfoss/source-caddy:main-scratch
+
+  #
+  # ZSH Source
+  #
+  # Website: https://www.zsh.org/
+  # GitHub: https://github.com/netdata/netdata.git
+  # Docs: https://learn.netdata.cloud/docs/agent
+  #
+  zshStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        BUILD_PKGS: ack
+        FETCH_CWD: /src
+        FETCH_CMD: |
+          mkdir -p /src/zsh
+          export ZSH_VERSION=$$(wget -O - -q http://www.zsh.org/pub/ | ack -o '(?<=>zsh-)\d{1,2}\.\d{1,2}' | tail -1)
+          echo "Getting ZSH Version $${ZSH_VERSION}"
+          wget -O - http://www.zsh.org/pub/zsh-$${ZSH_VERSION}.tar.xz | tar xJ -C /src/zsh --strip-components=1
+        SOURCE_PATH: /src/zsh
+    image: kristianfoss/source-zsh:stable-scratch
+
+  #
+  # Grafana Source
+  #
+  # Website: https://grafana.com/
+  # GitHub: https://github.com/grafana/grafana
+  # Docs: https://grafana.com/docs/
+  #
+  grafanaMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/grafana/grafana.git
+        SOURCE_PATH: /src/grafana
+    image: kristianfoss/source-grafana:main-scratch
+
+  #
+  # Busybox Source
+  #
+  # Website: https://www.busybox.net
+  # Docs:
+  busyboxStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        BUILD_PKGS: ack
+        FETCH_CWD: /src
+        FETCH_CMD: |
+          mkdir -p /src/busybox
+          export BUSYBOX_VERSION=$$(wget -O - -q https://www.busybox.net/downloads/ | ack -o '(?<=>busybox-)\d{1,2}\.\d{1,2}\.\d{1,2}' | tail -1)
+          echo "Getting Busybox Version $${BUSYBOX_VERSION}"
+          wget -O - https://www.busybox.net/downloads/busybox-$${BUSYBOX_VERSION}.tar.bz2 | tar xj -C /src/busybox --strip-components=1
+        SOURCE_PATH: /src/busybox
+    image: kristianfoss/source-busybox:stable-scratch
+
+  #
+  # LibreSpeed
+  #
+  # Website: https://github.com/librespeed/speedtest/tree/master
+  # GitHub: https://github.com/librespeed/speedtest
+  #
+
+  # Librespeed Go Variant Main Source in a `FROM scratch` final base image
+  librespeedGoSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/librespeed
+        FETCH_CMD: git clone --depth 1 -b go https://github.com/librespeed/speedtest
+        SOURCE_PATH: /go/src/github.com/librespeed/speedtest
+    image: kristianfoss/source-librespeed:go-scratch
+
+  #
+  # OpenSSH Source
+  #
+  # Website: https://www.openssh.com/
+  # GitHub: https://github.com/openssh/openssh-portable
+  # Docs: https://man.openbsd.org/ssh.1
+
+  # OpenSSH Main Source in a `FROM scratch` final base image
+  opensshMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/openssh/openssh-portable.git openssh
+        SOURCE_PATH: /src/openssh
+    image: kristianfoss/source-openssh:main-scratch
+
+    #
+  # OpenSSH Stable Source in a `FROM scratch` final base image
+  opensshStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        BUILD_PKGS: ack
+        FETCH_CWD: /src
+        FETCH_CMD: |
+          mkdir -p /src/openssh
+          export OPENSSH_VERSION=$$(wget -O - -q https://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/ | ack -o '(?<=>openssh-)\d{1,2}\.\d{1,2}p\d{1,2}' | tail -1)
+          echo "Getting OpenSSH Version $${OPENSSH_VERSION}"
+          wget -O - https://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-$${OPENSSH_VERSION}.tar.gz | tar xz -C /src/openssh --strip-components=1
+        SOURCE_PATH: /src/openssh
+    image: kristianfoss/source-openssh:stable-scratch
+
+  #
+  # Go Ping (WIP)
+  #
+  goPingMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/sparrc
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/sparrc/go-ping.git
+        SOURCE_PATH: /go/src/github.com/sparrc/go-ping
+    image: kristianfoss/source-goping:main-scratch
+
+  #
+  # FreeType Source
+  #
+  #
+
+  # Freetype Main Branch source in a `FROM scratch` final base image
+  freetype2MainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src/
+        FETCH_CMD: git clone --depth 1 -b master https://git.savannah.gnu.org/git/freetype/freetype2.git
+        SOURCE_PATH: /src/freetype2
+    image: kristianfoss/source-freetype2:main-scratch
+
+  # Freetype Stable source in a `FROM scratch` final base image
+  freetype2StableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        BUILD_PKGS: ack
+        FETCH_CWD: /src
+        FETCH_CMD: |
+          mkdir -p /src/freetype2
+          export FREETYPE_VERSION=$$(wget -O - -q https://mirrors.sarata.com/non-gnu/freetype/ | ack -o '(?<=>freetype-)\d{1}\.\d{1,2}\.\d{1,2}' | tail -1)
+          echo "Getting OpenSSH Version $${OPENSSH_VERSION}"
+          wget -O - https://mirrors.sarata.com/non-gnu/freetype/freetype-$${FREETYPE_VERSION}.tar.xz | tar xJ -C /src/freetype2 --strip-components=1
+        SOURCE_PATH: /src/freetype2
+    image: kristianfoss/source-freetype2:stable-scratch
+
+  #
+  # OpenJDK Source
+  #
+  # Website: TODO
+  # GitHub/Repo: TODO
+  # Docs: TODO
+  #
+
+  # OpenJDK Main Source in a `FROM scratch` final base image
+  # openJDKMainSourceScratch:
+  #   build:
+  #     <<: *sourceBuilder
+  #     args:
+  #       FETCH_CWD: /src/
+  #       FETCH_CMD: |
+  #         git clone --depth 1 -b master https://github.com/openjdk/jdk openjdk
+  #         wget -O /src/openjdk/build.patch https://git.alpinelinux.org/aports/plain/testing/openjdk14/build.patch
+  #         wget -O /src/openjdk/fix-bootjdk-check.patch https://git.alpinelinux.org/aports/plain/testing/openjdk14/fix-bootjdk-check.patch
+  #         wget -O /src/openjdk/make-4.3.patch https://git.alpinelinux.org/aports/plain/testing/openjdk14/make-4.3.patch
+  #       SOURCE_PATH: /src/openjdk
+  #   image: kristianfoss/source-openjdk:main-scratch
+
+  #
+  # Duplicati Source
+  #
+  # Website: https://duplicati.com
+  # GitHub: https://github.com/duplicati/duplicati
+  # Docs: https://docs.duplicati.com
+
+  # Duplicati main source in a `FROM scratch` final base image
+  duplicatiMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src/
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/duplicati/duplicati.git
+        SOURCE_PATH: /src/duplicati
+    image: kristianfoss/source-duplicati:main-scratch
+
+  #
+  # Postfix
+  #
+  # Website: http://www.postfix.org/
+  # Source: http://www.postfix.org/download.html
+  # Docs: http://www.postfix.org/documentation.html
+  #
+
+  # Postfix Stable source in a `FROM scratch` final base image
+  postfixStableSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        BUILD_PKGS: ack wget
+        FETCH_CWD: /src
+        FETCH_CMD: |
+          mkdir -p /src/postfix
+          export POSTFIX_VERSION=$$(wget -O - -q ftp://ftp.porcupine.org/mirrors/project-history/postfix/official/ | ack -o '(?<=postfix\-)\d{1,2}\.\d{1,2}\.\d{1,2}' | tail -1)
+          echo "Getting Postfix Version $${POSTFIX_VERSION}"
+          wget -O - -q ftp://ftp.porcupine.org/mirrors/project-history/postfix/official/postfix-$${POSTFIX_VERSION}.tar.gz | tar xz -C /src/postfix --strip-components=1
+        SOURCE_PATH: /src/postfix
+    image: kristianfoss/source-postfix:stable-scratch
+
+  #
+  # Bagisto
+  #
+  # Website: https://bagisto.com/
+  # GitHub: https://github.com/bagisto/bagisto
+  #
+  bagistoMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /src/
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/bagisto/bagisto.git
+        SOURCE_PATH: /src/bagisto
+    image: kristianfoss/source-bagisto:main-scratch
+
+  #
+  # RClone Source
+  #
+  # Website: https://rclone.org/
+  # GitHub: https://github.com/rclone/rclone
+  # Docs: https://rclone.org/docs/
+  #
+  rcloneMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        FETCH_CWD: /go/src/github.com/rclone
+        FETCH_CMD: git clone --depth 1 -b master https://github.com/rclone/rclone.git
+        SOURCE_PATH: /go/src/github.com/rclone/rclone
+    image: kristianfoss/source-rclone:main-scratch
+
+  #
+  # CDR Code Server
+  #
+  # Website: https://coder.com/
+  # GitHub: https://github.com/cdr/code-server
+  # Docs:
+  #
+
+  codeserverMainSourceScratch:
+    build:
+      <<: *sourceBuilder
+      args:
+        BUILD_IMAGE: node:alpine
+        FETCH_PKGS: libxkbfile-dev libsecret-dev build-base git bash python
+        FETCH_CWD: /src
+        FETCH_CMD: |
+          git clone -b v3.4.1 https://github.com/cdr/code-server.git
+          cd code-server
+          yarn
+          yarn vscode
+        SOURCE_PATH: /src/code-server
+    image: kristianfoss/source-codeserver:main-scratch

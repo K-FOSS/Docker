@@ -12,12 +12,12 @@ services:
     image: caddy/caddy:scratch
     restart: unless-stopped
     command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile.json']
+    volumes:
+      - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
     networks:
       - publicWeb
     ports:
       - 8080:8080
-    volumes:
-      - ./Caddyfile.json:/etc/caddy/Caddyfile.json:ro
 
   pgWeb:
     image: kristianfoss/programs-pgweb:scratch

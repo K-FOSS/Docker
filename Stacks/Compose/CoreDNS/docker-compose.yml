@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  CoreDNS:
+    image: kristianfoss/programs-coredns:scratch
+    command: ['--dns.port', '8053', '--conf=/etc/CoreDNS/Corefile']
+    volumes:
+      - ./Corefile:/etc/CoreDNS/Corefile:ro
+    ports:
+      - 55:8053/udp

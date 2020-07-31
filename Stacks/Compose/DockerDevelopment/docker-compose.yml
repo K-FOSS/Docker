@@ -1,0 +1,47 @@
+version: '3.8'
+
+volumes:
+  dockerSocket:
+    name: ${DEVELOPMENT_NAME}-socket
+    external: true
+
+  Coder:
+    name: coder
+    external: true
+
+services:
+  DockerD:
+    image: kristianfoss/programs-docker:dockerd-rootless-main-scratch
+    command:
+      [
+        '--net=vpnkit',
+        '--disable-host-loopback',
+        '--copy-up=/etc',
+        '--copy-up=/run',
+        '--copy-up=/config',
+        'dockerd',
+        '--experimental',
+        '--rootless',
+      ]
+    restart: unless-stopped
+    privileged: true
+    user: user
+    cap_add:
+      - NET_ADMIN
+    environment:
+      XDG_RUNTIME_DIR: /run/user/1000
+    volumes:
+      - dockerSocket:/run/user/1000
+      - ./daemon.json:/etc/docker/daemon.json:ro
+      - Coder:/config
+
+  Coder:
+    image: kristianfoss/programs-codeserver:codeserver-docker-main-scratch
+    command: ['.', '--bind-addr=0.0.0.0', '--port=8080', '--auth=none']
+    entrypoint: node
+    working_dir: /src/release
+    ports:
+      - 8080:8080
+    volumes:
+      - Coder:/config
+      - dockerSocket:/var/run

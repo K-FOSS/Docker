@@ -14,7 +14,6 @@ RUN export DOCKER_VERSION=$(wget -O - -q https://download.docker.com/linux/stati
   && wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz | tar xz -C /tmp/docker --strip-components=1 \
   && wget -O - https://download.docker.com/linux/static/stable/x86_64/docker-rootless-extras-${DOCKER_VERSION}.tgz | tar xz -C /tmp/docker --strip-components=1
 
-RUN ls -lah /tmp/docker/*
 
 FROM ${ALPINE} as iptablesBuild
 RUN apk add --no-cache ack binutils
